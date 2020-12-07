@@ -143,7 +143,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("=============================");
 }
 
-PubSubClient client("s1.gulusoft.com",1883,callback,espClient);
+PubSubClient client("192.168.18.60",1883,callback,espClient);
+//PubSubClient client("s1.gulusoft.com",1883,callback,espClient);
 
 void reconnect() {
   // Loop until we're reconnected
@@ -226,7 +227,11 @@ void loop(void)
     reconnect();
   }
   client.loop();
-  delay(1000);
+  long now = millis();
+  if (now - lastMsg > 2000) {
+    lastMsg = now;
+    client.publish("addf59cad3fb9-hart-beat", WiFi.macAddress().c_str());
+  }
 }
 
 string replaceCommaToSpace(string s) {
