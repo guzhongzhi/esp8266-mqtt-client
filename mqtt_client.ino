@@ -15,17 +15,23 @@
  *     for your first time. e.g. ESP-12 etc.
  *     https://github.com/abhrodeep/Arduino_projs
  */
-#define MQTT_MAX_PACKET_SIZE 2048
+
 #ifndef UNIT_TEST
 #include <Arduino.h>
-#endif
+#endif 
+#define MQTT_MAX_PACKET_SIZE 2048
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include <PubSubClient.h> //>=2.8
+#include <IRremoteESP8266.h>
+#include <IRsend.h>
+#include <vector>
+#include <iostream>
+#include <sstream> 
 #include<string>
+#include "ESP8266HTTPClient.h"
+
 using namespace std;
-const char *ssid = "10012503";
-const char *password = "gd10012503";
 
 WiFiClient espClient;
 unsigned long lastMsg = 0;
@@ -33,54 +39,51 @@ unsigned long lastMsg = 0;
 char msg[MSG_BUFFER_SIZE];
 int value = 0;
 
+const uint16_t statePIN = 0;  //ESP8266 GPIO pin to use. Recommended: 0 (D3). 开机状态
+const uint16_t relayPIN = 5; //ESP8266 GPIO pin to use. Recommended: 5 (D1). 继电器
+const uint16_t kIrLed = 4; // ESP8266 GPIO pin to use. Recommended: 4 (D2). 红外
+IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
+
 bool autoConfig()
 {
-    int a = 0;
+    int tried = 0;
+    Serial.println( "" );
+    Serial.print( "Start to connect WIFI." );
     WiFi.begin();
-        while ( WiFi.status() != WL_CONNECTED )
-        {
-            Serial.println( "AutoConfig Success" );
-            Serial.printf( "SSID:%s\r\n", WiFi.SSID().c_str() );
-            Serial.printf( "PSW:%s\r\n", WiFi.psk().c_str() );
-            WiFi.printDiag( Serial );
-            delay( 1000 );
-            a++;
-            if ( a == 10 )
-            {
-                a = 0;
-                return(false);
-                break;
-            }
+    while ( WiFi.status() != WL_CONNECTED )
+    {
+        Serial.print( "." );
+        tried++;
+        delay( 1000 );
+        if(tried >= 10) {
+          return false;
         }
-        if ( false )
-        {
-            Serial.println( "" );
-            Serial.println( "wifi line faild !" );
-        }else  {
-            Serial.println( "" );
-            Serial.println( "WiFi connected" );
-            Serial.println( "IP address: " );
-            Serial.println( WiFi.localIP() );
-            return(true);
-        }
+    }
+    Serial.println( "" );
+    Serial.println( "WiFi connected" );
+    Serial.println( "IP address: " );
+    Serial.println( WiFi.localIP() );
+    return(true);
 }
 void smartConfig()
 {
-    WiFi.mode( WIFI_STA );
     Serial.println( "\r\nWait for Smartconfig" );
+    WiFi.mode( WIFI_STA );
     WiFi.beginSmartConfig();
-    while ( 1 )
+    Serial.print( "Wait soft line.." );
+    while ( WiFi.status() != WL_CONNECTED )
     {
-        Serial.print( "Wait soft line..\r\n" );
-        if ( WiFi.smartConfigDone() )
+        Serial.print(".");
+        if (! WiFi.smartConfigDone() )
         {
-            Serial.println( "SmartConfig Success" );
-            Serial.printf( "SSID:%s\r\n", WiFi.SSID().c_str() );
-            Serial.printf( "PSW:%s\r\n", WiFi.psk().c_str() );
-            WiFi.setAutoConnect( true ); /* 设置自动连接 */
-            break;
+            delay( 1000 );
+            continue;
         }
-        delay( 1000 );
+        Serial.println( "SmartConfig Success" );
+        Serial.printf( "SSID:%s\r\n", WiFi.SSID().c_str() );
+        Serial.printf( "PSW:%s\r\n", WiFi.psk().c_str() );
+        WiFi.setAutoConnect( true ); /* 设置自动连接 */
+        break;        
     }
     Serial.println( "" );
     Serial.println( "WiFi connected" );
@@ -89,7 +92,7 @@ void smartConfig()
 }
 
 void debugWIFI() {
-  WiFi.begin(ssid, password);
+    WiFi.begin("10012503", "gd10012503");
     Serial.println("");
     // Wait for connection
     while (WiFi.status() != WL_CONNECTED)
@@ -99,20 +102,42 @@ void debugWIFI() {
     }
     Serial.println("");
     Serial.print("Connected to ");
-    Serial.println(ssid);
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
 }
 
-
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
-  Serial.println(topic);
-  Serial.println(length);
+  Serial.print(topic);
+  Serial.print(length);
   Serial.print("] ");
   for (int i = 0; i < length; i++) {
     Serial.print((char)payload[i]);
   }
+  Serial.println("");
+
+  string cmd = "";
+  string message = "";
+  int isMessage = 0;
+  for(int i =0;i<length;i++) {
+    char c = (char)payload[i];
+    if(c == '|') {
+       isMessage = true;
+       continue;
+    } else if(isMessage == 0){
+      cmd += c;
+    } else if(isMessage > 0) {
+      message += (char)payload[i];
+    }
+  }
+  if(cmd == "irs") {
+    sendCode(message,"");
+  } else if(cmd == "upp") {
+    setHigh();
+  } else if(cmd == "low") {
+    setLow();
+  }
+  
   Serial.println("");
   Serial.println("=============================");
 }
@@ -124,13 +149,14 @@ void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     // Create a random client ID
-    String clientId = "ESP8266Client-";
+    String clientId = "addf59cad3fb9-";
     clientId += String(random(0xffff), HEX);
     // Attempt to connect
     client.setBufferSize(2048);
-    if (client.connect(clientId.c_str(),"admin","admin","test",1,false,"")) {
+    char * topic = "addf59cad3fb9-topic";
+    if (client.connect(clientId.c_str(),"admin","admin",topic,1,false,"")) {
       Serial.println("connected");
-      client.subscribe("test",1);
+      client.subscribe(topic,1);
       client.setCallback(callback);
     } else {
       Serial.print("failed, rc=");
@@ -142,21 +168,86 @@ void reconnect() {
   }
 }
 
+void setHigh() {
+    Serial.println("replay high");
+    digitalWrite(relayPIN,HIGH);
+}
+
+void setLow() {
+  Serial.println("replay low");
+  digitalWrite(relayPIN,LOW);
+}
+
+
+void sendHttpOut(String data) {
+    HTTPClient http;
+
+    String s1 = "http://esp8266.gulusoft.com/index.php?mac=";
+    s1.concat(WiFi.macAddress());
+    s1.concat("&ip=");
+    s1.concat(WiFi.localIP().toString());
+    s1.concat("&wifi=");
+    s1.concat(WiFi.SSID().c_str());
+    
+    const char* m = data.c_str();
+    char * s = new char[data.length()];
+    Serial.println("data length");
+    Serial.println(data.length());
+    int sIndex = 0;
+    for(int i=0;i<data.length();i++) {
+       if(m[i] == ' ')  {
+          continue;
+       }
+       if(m[i] == '\n' || m[i]=='\r') {
+           break;
+       }
+       if(m[i] == '{') {
+        sIndex = 0;
+        continue;
+       }
+       if(m[i]=='}') {
+        break;
+       }
+       s[sIndex++] = m[i];
+    }
+    s[sIndex] = '\0';
+    
+    char * finalData = new char[sIndex+1];
+    for(int i=0;i < sIndex;i++) {
+      finalData[i] = s[i];
+    }
+    finalData[sIndex] = '\0';
+    
+    Serial.println("final data");
+    Serial.println(finalData);
+    s1.concat("&data=");
+    s1.concat(finalData);
+    Serial.println(s1);
+    http.begin(s1); 
+    http.addHeader("Content-Type", "application/json"); 
+    http.GET();
+    http.end();
+    delete s;
+    delete finalData;
+}
+
 void setup(void)
 {
   Serial.begin(115200);
   Serial.println("");
-
+  pinMode(relayPIN, OUTPUT);
+  pinMode(statePIN, OUTPUT);
+  digitalWrite(statePIN,HIGH);
+  digitalWrite(relayPIN,HIGH);
   int DEBUG = 0;
   if(DEBUG == 1) {
     debugWIFI();
-  } else {
-    if ( !autoConfig() )
-    {
-        Serial.println( "Start AP mode" );
-        smartConfig();
-    }
-  } 
+  } else if (!autoConfig()){
+      Serial.println( "Start AP mode" );
+      smartConfig();
+  }
+  sendHttpOut("init");
+  irsend.begin();
 }
 
 void loop(void)
@@ -165,4 +256,37 @@ void loop(void)
     reconnect();
   }
   client.loop();
+}
+
+string replaceCommaToSpace(string s) {
+  int n = s.length();
+  for (int i = 0; i < n; ++i){
+    if (s[i] == ','){
+      s[i] = ' ';
+    }
+  }
+  return s;
+}
+
+//
+void sendCode(string message, string type) {
+  message = replaceCommaToSpace(message);
+  istringstream is(message);
+  vector<uint16_t> v;
+  uint16_t i;
+  while(is>>i)
+  {
+      v.push_back(i);
+  }
+  uint16_t rawData[v.size()];
+  for(int i=0;i<v.size();i++) {
+    rawData[i] = v[i];
+  }
+  
+  Serial.println("start to send IR");
+  irsend.sendRaw(rawData, v.size(), 38);
+  //irsend.sendRaw(rawData2, 73, 38);
+  //v.clear();
+  //delete []rawData;
+  Serial.println("end to send IR");
 }
