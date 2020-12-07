@@ -55,7 +55,8 @@ bool autoConfig()
         Serial.print( "." );
         tried++;
         delay( 1000 );
-        if(tried >= 10) {
+        if(tried >= 20) {
+          Serial.println( "" );
           return false;
         }
     }
@@ -132,9 +133,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   if(cmd == "irs") {
     sendCode(message,"");
-  } else if(cmd == "upp") {
+  } else if(cmd == "upp" || cmd == "on") {
     setHigh();
-  } else if(cmd == "low") {
+  } else if(cmd == "low" || cmd == "off") {
     setLow();
   }
   
@@ -154,16 +155,18 @@ void reconnect() {
     // Attempt to connect
     client.setBufferSize(2048);
     char * topic = "addf59cad3fb9-topic";
+    char * globalTopic = "addf59cad3fb9-global";
     if (client.connect(clientId.c_str(),"admin","admin",topic,1,false,"")) {
       Serial.println("connected");
       client.subscribe(topic,1);
+      client.subscribe(globalTopic,1);
       client.setCallback(callback);
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
+      Serial.println(" try again in 2 seconds");
       // Wait 5 seconds before retrying
-      delay(5000);
+      delay(2000);
     }
   }
 }
@@ -188,47 +191,13 @@ void sendHttpOut(String data) {
     s1.concat(WiFi.localIP().toString());
     s1.concat("&wifi=");
     s1.concat(WiFi.SSID().c_str());
-    
-    const char* m = data.c_str();
-    char * s = new char[data.length()];
-    Serial.println("data length");
-    Serial.println(data.length());
-    int sIndex = 0;
-    for(int i=0;i<data.length();i++) {
-       if(m[i] == ' ')  {
-          continue;
-       }
-       if(m[i] == '\n' || m[i]=='\r') {
-           break;
-       }
-       if(m[i] == '{') {
-        sIndex = 0;
-        continue;
-       }
-       if(m[i]=='}') {
-        break;
-       }
-       s[sIndex++] = m[i];
-    }
-    s[sIndex] = '\0';
-    
-    char * finalData = new char[sIndex+1];
-    for(int i=0;i < sIndex;i++) {
-      finalData[i] = s[i];
-    }
-    finalData[sIndex] = '\0';
-    
-    Serial.println("final data");
-    Serial.println(finalData);
     s1.concat("&data=");
-    s1.concat(finalData);
+    s1.concat(data);
     Serial.println(s1);
     http.begin(s1); 
     http.addHeader("Content-Type", "application/json"); 
     http.GET();
     http.end();
-    delete s;
-    delete finalData;
 }
 
 void setup(void)
@@ -246,6 +215,7 @@ void setup(void)
       Serial.println( "Start AP mode" );
       smartConfig();
   }
+  delay(2000);
   sendHttpOut("init");
   irsend.begin();
 }
@@ -256,6 +226,7 @@ void loop(void)
     reconnect();
   }
   client.loop();
+  delay(1000);
 }
 
 string replaceCommaToSpace(string s) {
@@ -285,8 +256,5 @@ void sendCode(string message, string type) {
   
   Serial.println("start to send IR");
   irsend.sendRaw(rawData, v.size(), 38);
-  //irsend.sendRaw(rawData2, 73, 38);
-  //v.clear();
-  //delete []rawData;
   Serial.println("end to send IR");
 }
