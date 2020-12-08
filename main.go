@@ -30,9 +30,13 @@ func main() {
 	opts.AddBroker("tcp://192.168.18.60:1883")
 	opts.SetClientID("aaaaaaa")
 	opts.SetDefaultPublishHandler(func(client mqtt.Client, message mqtt.Message) {
-		
+
 	})
 	opts.OnConnect = func(client mqtt.Client) {
+		client.Subscribe("camera360-ir-received",2, func(client mqtt.Client, message mqtt.Message) {
+			fmt.Println("ir received",string(message.Payload()))
+
+		})
 		client.Subscribe("camera360-hart-beat",2, func(client mqtt.Client, message mqtt.Message) {
 			fmt.Println("message",fmt.Sprintf("%s",message.Payload()))
 			u, err := url.Parse("http://localhost?" + string(message.Payload()))

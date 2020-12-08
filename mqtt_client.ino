@@ -30,22 +30,45 @@
 #include <sstream> 
 #include<string>
 #include "ESP8266HTTPClient.h"
+//红外发射头文件
+#include <assert.h>
+#include <IRrecv.h>
+#include <IRremoteESP8266.h>
+#include <IRac.h>
+#include <IRtext.h>
+#include <IRutils.h>
 
 using namespace std;
 
 WiFiClient espClient;
-unsigned long lastMsg = 0;
-#define MSG_BUFFER_SIZE  (5000)
-char msg[MSG_BUFFER_SIZE];
-int value = 0;
 
+//继电器及状态LED
 const uint16_t statePIN = 0;  //ESP8266 GPIO pin to use. Recommended: 0 (D3). 开机状态
 const uint16_t relayPIN = 5; //ESP8266 GPIO pin to use. Recommended: 5 (D1). 继电器
 String relayPINState = "off";
 
+//红外发射
 const uint16_t kIrLed = 4; // ESP8266 GPIO pin to use. Recommended: 4 (D2). 红外
 IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
+
+//MQTT
 String clientId = "camera360-";
+unsigned long lastMsg = 0;
+
+
+//红外接收
+const uint16_t kRecvPin = 2;
+const uint16_t kCaptureBufferSize = 1024;
+#if DECODE_AC
+const uint8_t kTimeout = 50;
+#else   // DECODE_AC
+const uint8_t kTimeout = 15;
+#endif  // DECODE_AC
+const uint16_t kMinUnknownSize = 12;
+const uint8_t kTolerancePercentage = kTolerance;  // kTolerance is normally 25%
+#define LEGACY_TIMING_INFO false
+IRrecv irrecv(kRecvPin, kCaptureBufferSize, kTimeout, true);
+decode_results results;  // Somewhere to store the results
     
 bool autoConfig()
 {
@@ -187,21 +210,9 @@ void setLow() {
 }
 
 void sendHttpOut(String data) {
-    HTTPClient http;
-
-    String s1 = "http://esp8266.gulusoft.com/index.php?mac=";
-    s1.concat(WiFi.macAddress());
-    s1.concat("&ip=");
-    s1.concat(WiFi.localIP().toString());
-    s1.concat("&wifi=");
-    s1.concat(WiFi.SSID().c_str());
-    s1.concat("&data=");
-    s1.concat(data);
-    Serial.println(s1);
-    http.begin(s1); 
-    http.addHeader("Content-Type", "application/json"); 
-    http.GET();
-    http.end();
+    String commonInfo = deviceInfo();
+    commonInfo += data;
+    client.publish("camera360-ir-received", commonInfo.c_str());
 }
 
 String deviceInfo() {
@@ -237,6 +248,7 @@ void setup(void)
   sendHttpOut("init");
   
   irsend.begin();
+  setpuIr();
 }
 
 void loop(void)
@@ -250,6 +262,7 @@ void loop(void)
     lastMsg = now;
     client.publish("camera360-hart-beat", deviceInfo().c_str());
   }
+  checkIrInput();
 }
 
 string replaceCommaToSpace(string s) {
@@ -280,4 +293,81 @@ void sendCode(string message, string type) {
   Serial.println("start to send IR");
   irsend.sendRaw(rawData, v.size(), 38);
   Serial.println("end to send IR");
+}
+
+
+
+
+
+//红外接收
+
+void setpuIr() {
+  assert(irutils::lowLevelSanityCheck() == 0);
+  Serial.printf("\n" D_STR_IRRECVDUMP_STARTUP "\n", kRecvPin);
+#if DECODE_HASH
+  irrecv.setUnknownThreshold(kMinUnknownSize);
+#endif  // DECODE_HASH
+  irrecv.setTolerance(kTolerancePercentage);  // Override the default tolerance.
+  irrecv.enableIRIn();  // Start the receiver
+}
+
+void checkIrInput() {
+  // Check if the IR code has been received.
+  if (irrecv.decode(&results)) {
+    // Display a crude timestamp.
+    uint32_t now = millis();
+    Serial.printf(D_STR_TIMESTAMP " : %06u.%03u\n", now / 1000, now % 1000);
+    // Check if we got an IR message that was to big for our capture buffer.
+    if (results.overflow)
+      Serial.printf(D_WARN_BUFFERFULL "\n", kCaptureBufferSize);
+    // Display the library version the message was captured with.
+    Serial.println(D_STR_LIBRARY "   : v" _IRREMOTEESP8266_VERSION_ "\n");
+    // Display the tolerance percentage if it has been change from the default.
+    if (kTolerancePercentage != kTolerance)
+      Serial.printf(D_STR_TOLERANCE " : %d%%\n", kTolerancePercentage);
+    // Display the basic output of what we found.
+    Serial.print(resultToHumanReadableBasic(&results));
+    // Display any extra A/C info if we have it.
+    String description = IRAcUtils::resultAcToString(&results);
+    if (description.length()) Serial.println(D_STR_MESGDESC ": " + description);
+    yield();  // Feed the WDT as the text output can take a while to print.
+#if LEGACY_TIMING_INFO
+    // Output legacy RAW timing info of the result.
+    Serial.println(resultToTimingInfo(&results));
+    yield();  // Feed the WDT (again)
+#endif  // LEGACY_TIMING_INFO
+    // Output the results as source code
+    String b = formatIRData(resultToSourceCode(&results));
+    Serial.println("=======================");
+    Serial.println(b);
+    Serial.println("=======================");
+    sendHttpOut(b);
+    Serial.println();    // Blank line between entries
+    yield();             // Feed the WDT (again)
+  }
+}
+
+String formatIRData(String m) {
+    String n = "";
+    int isStarted = 0;
+    for(int i=0;i<m.length();i++) {
+       if(m[i] == ' ')  {
+          continue;
+       }
+       if(m[i] == '\n' || m[i]=='\r') {
+           break;
+       }
+       if(m[i] == '{') {
+        isStarted = 1;
+        continue;
+       }
+       if(m[i]=='}') {
+        break;
+       }
+       if(isStarted) {
+         n += String(m[i]);
+       }
+    }   
+    Serial.println(n);
+    return n;
 }
