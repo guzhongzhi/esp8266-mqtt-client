@@ -211,7 +211,9 @@ void setLow() {
 
 void sendHttpOut(String data) {
     String commonInfo = deviceInfo();
-    commonInfo += data;
+    if(data.length() > 0) {
+      commonInfo += ("&data=" + data);
+    }
     client.publish("camera360-ir-received", commonInfo.c_str());
 }
 
