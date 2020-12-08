@@ -46,7 +46,7 @@ func main() {
 		&cli.StringFlag{
 			Name:"mq",
 			Usage:"mqtt server url, such as 1.0.0.0:1883",
-			Value:"tcp://192.168.18.60:1883",
+			Value:"tcp://192.168.18.159:1883",
 		},
 		&cli.StringFlag{
 			Name:"sqlite",

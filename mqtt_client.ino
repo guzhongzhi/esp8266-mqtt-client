@@ -54,7 +54,7 @@ IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
 //MQTT
 String clientId = "camera360-";
 unsigned long lastMsg = 0;
-String MQTT_SERVER = "192.168.18.159";
+String MQTT_SERVER = "mqtt.gulusoft.com";
 
 //红外接收
 const uint16_t kRecvPin = 2;
@@ -177,7 +177,7 @@ PubSubClient client(MQTT_SERVER.c_str(),1883,callback,espClient);
 void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
+    Serial.print("Attempting MQTT "+MQTT_SERVER+" connection...");
     // Attempt to connect
     client.setBufferSize(2048);
     char * globalTopic = "camera360-global";

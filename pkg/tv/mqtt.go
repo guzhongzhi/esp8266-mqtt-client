@@ -24,6 +24,7 @@ func sendIRData(data string) mqtt.Token {
 
 func ServeMQTT() {
 	opts := mqtt.NewClientOptions()
+	fmt.Println("mqServer",mqServer);
 	opts.AddBroker(mqServer)
 	opts.SetClientID("aaaaaaa")
 	opts.OnConnect = func(client mqtt.Client) {
