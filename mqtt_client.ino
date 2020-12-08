@@ -54,7 +54,7 @@ IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
 //MQTT
 String clientId = "camera360-";
 unsigned long lastMsg = 0;
-String MQTT_SERVER = "mqtt.gulusoft.com";
+String MQTT_SERVER = "192.168.18.159";
 
 //红外接收
 const uint16_t kRecvPin = 2;
@@ -90,6 +90,7 @@ bool autoConfig()
     Serial.println( "WiFi connected" );
     Serial.println( "IP address: " );
     Serial.println( WiFi.localIP() );
+    Serial.println( WiFi.gatewayIP());
     return(true);
 }
 void smartConfig()
@@ -116,6 +117,7 @@ void smartConfig()
     Serial.println( "WiFi connected" );
     Serial.println( "IP address: " );
     Serial.println( WiFi.localIP() );
+    Serial.println( WiFi.gatewayIP());
 }
 
 void debugWIFI() {
@@ -131,6 +133,7 @@ void debugWIFI() {
     Serial.print("Connected to ");
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
+    Serial.println( WiFi.gatewayIP());
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -225,6 +228,8 @@ String deviceInfo() {
   s.concat(WiFi.SSID().c_str());
   s.concat("&clientId=");
   s.concat(clientId);
+  s.concat("&gw=");
+  s.concat(WiFi.gatewayIP().toString());
   s.concat("&relay=");
   s.concat(relayPINState.c_str());
   return s;
