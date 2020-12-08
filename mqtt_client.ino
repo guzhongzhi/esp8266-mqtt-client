@@ -41,9 +41,12 @@ int value = 0;
 
 const uint16_t statePIN = 0;  //ESP8266 GPIO pin to use. Recommended: 0 (D3). 开机状态
 const uint16_t relayPIN = 5; //ESP8266 GPIO pin to use. Recommended: 5 (D1). 继电器
+String relayPINState = "off";
+
 const uint16_t kIrLed = 4; // ESP8266 GPIO pin to use. Recommended: 4 (D2). 红外
 IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
-
+String clientId = "camera360-";
+    
 bool autoConfig()
 {
     int tried = 0;
@@ -150,16 +153,13 @@ void reconnect() {
   // Loop until we're reconnected
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    // Create a random client ID
-    String clientId = "addf59cad3fb9-";
-    clientId += String(random(0xffff), HEX);
     // Attempt to connect
     client.setBufferSize(2048);
-    char * topic = "addf59cad3fb9-topic";
-    char * globalTopic = "addf59cad3fb9-global";
-    if (client.connect(clientId.c_str(),"admin","admin",topic,1,false,"")) {
+    char * globalTopic = "camera360-global";
+    if (client.connect(clientId.c_str(),"admin","admin",globalTopic,1,false,"")) {
       Serial.println("connected");
-      client.subscribe(topic,1);
+      String ss = clientId + "-" + WiFi.macAddress();
+      client.subscribe(ss.c_str(),1);
       client.subscribe(globalTopic,1);
       client.setCallback(callback);
     } else {
@@ -173,15 +173,18 @@ void reconnect() {
 }
 
 void setHigh() {
+    relayPINState = "on";
     Serial.println("replay high");
     digitalWrite(relayPIN,HIGH);
+    client.publish("camera360-hart-beat", deviceInfo().c_str());
 }
 
 void setLow() {
   Serial.println("replay low");
+  relayPINState = "off";
   digitalWrite(relayPIN,LOW);
+  client.publish("camera360-hart-beat", deviceInfo().c_str());
 }
-
 
 void sendHttpOut(String data) {
     HTTPClient http;
@@ -201,14 +204,28 @@ void sendHttpOut(String data) {
     http.end();
 }
 
+String deviceInfo() {
+  String s = "mac=";
+  s.concat(WiFi.macAddress());
+  s.concat("&ip=");
+  s.concat(WiFi.localIP().toString());
+  s.concat("&wifi=");
+  s.concat(WiFi.SSID().c_str());
+  s.concat("&clientId=");
+  s.concat(clientId);
+  s.concat("&relay=");
+  s.concat(relayPINState.c_str());
+  return s;
+}
+
 void setup(void)
 {
+  clientId += String(random(0xffff), HEX);
   Serial.begin(115200);
   Serial.println("");
   pinMode(relayPIN, OUTPUT);
   pinMode(statePIN, OUTPUT);
-  digitalWrite(statePIN,HIGH);
-  digitalWrite(relayPIN,HIGH);
+  setLow();
   int DEBUG = 0;
   if(DEBUG == 1) {
     debugWIFI();
@@ -218,6 +235,7 @@ void setup(void)
   }
   delay(2000);
   sendHttpOut("init");
+  
   irsend.begin();
 }
 
@@ -228,9 +246,9 @@ void loop(void)
   }
   client.loop();
   long now = millis();
-  if (now - lastMsg > 2000) {
+  if (now - lastMsg > 5000) {
     lastMsg = now;
-    client.publish("addf59cad3fb9-hart-beat", WiFi.macAddress().c_str());
+    client.publish("camera360-hart-beat", deviceInfo().c_str());
   }
 }
 
