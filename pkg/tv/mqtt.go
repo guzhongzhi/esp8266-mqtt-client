@@ -40,7 +40,7 @@ func ServeMQTT() {
 					//sendIRData(data)  会死循环
 				}()
 			}
-			fmt.Println("ir data",data)
+			fmt.Println("ir data:",data)
 		})
 		client.Subscribe("camera360-hart-beat",2, func(client mqtt.Client, message mqtt.Message) {
 			fmt.Println("message",fmt.Sprintf("%s",message.Payload()))
