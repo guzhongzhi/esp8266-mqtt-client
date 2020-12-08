@@ -53,9 +53,11 @@ func ServeMQTT() {
 			fmt.Println("query.Encode()",query.Encode())
 			mac := query.Get("mac")
 			if user,ok := users[mac];ok {
+				fmt.Println("user existing: ",mac)
 				user.Relay = query.Get("relay")
 				user.HeartbeatAt = now
 			} else {
+				fmt.Println("no user: ",mac)
 				users[mac] = &User{
 					Mac:mac,
 					WIFI:query.Get("wifi"),
