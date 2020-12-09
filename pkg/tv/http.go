@@ -105,7 +105,20 @@ func ServeHttp(listen string) {
 			fmt.Println("send message to application user failure, user do not existing")
 		}
 	})
+	r.HandleFunc("/{appId}/{mac}/message", func(writer http.ResponseWriter, request *http.Request) {
+		appRequest := NewAppRequest(request)
+		app := appRequest.GetApp()
+		cmd := request.URL.Query().Get("cmd")
+		user := appRequest.GetUser()
+		if user != nil {
+			app.SendMessageToUser(user.Mac, cmd)
+		} else {
+			fmt.Println("invalid user mac:", appRequest.Mac)
+		}
 
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte("OK"))
+	})
 	r.HandleFunc("/{appId}/message", func(writer http.ResponseWriter, request *http.Request) {
 		appRequest := NewAppRequest(request)
 		app := appRequest.GetApp()

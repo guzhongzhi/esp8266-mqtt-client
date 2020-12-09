@@ -61,7 +61,7 @@ type app struct {
 }
 
 func (s *app) GetPublicTopic() string {
-	return s.options.Id + "/public-topic"
+	return "/" + s.options.Id + "/public-topic"
 }
 
 func (s *app) GetUserByMac(mac string) *User {
@@ -72,11 +72,11 @@ func (s *app) GetUserByMac(mac string) *User {
 }
 
 func (s *app) GetUserHeartBeatTopic() string {
-	return s.options.Id + "/heart-beat"
+	return "/" + s.options.Id + "/heart-beat"
 }
 
 func (s *app) GetIRReceivedTopic() string {
-	return s.options.Id + "/ir-received"
+	return "/" + s.options.Id + "/ir-received"
 }
 
 func (s *app) SendMessage(message interface{}) mqtt.Token {
@@ -89,7 +89,7 @@ func (s *app) SendMessageToTopic(topic string, message interface{}) mqtt.Token {
 }
 
 func (s *app) GetUserTopic(u *User) string {
-	return s.options.Id + "/user/" + u.GetTopic()
+	return "/" + s.options.Id + "/user/" + u.GetTopic()
 }
 
 func (s *app) SendMessageToUser(mac string, message interface{}) (mqtt.Token, error) {
@@ -106,8 +106,8 @@ func (s *app) OnUserTopicDataReceived(client mqtt.Client, message mqtt.Message) 
 	topic := message.Topic()
 	fmt.Println("user topic: ", topic)
 	temp := strings.Split(topic, "/")
-	appId := temp[0]
-	mac := temp[2]
+	appId := temp[1]
+	mac := temp[3]
 	fmt.Println("send message to ", fmt.Sprintf("%v,%v,%v", appId, mac, string(message.Payload())))
 }
 
