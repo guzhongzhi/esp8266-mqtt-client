@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 )
 
@@ -17,7 +18,6 @@ type AppRequest struct {
 }
 
 func (s *AppRequest) GetApp() App {
-	fmt.Println("s.AppId", s.AppId)
 	return NewApp(s.AppId)
 }
 
@@ -33,7 +33,7 @@ func NewAppRequest(r *http.Request) *AppRequest {
 		appId = "camera360"
 	}
 	mac, ok := vars["mac"]
-	if ok {
+	if !ok {
 		mac = ""
 	}
 	newRequest := &AppRequest{
@@ -86,6 +86,9 @@ func ServeHttp(listen string) {
 	r.HandleFunc("/{appId}/users", func(w http.ResponseWriter, r *http.Request) {
 		request := NewAppRequest(r)
 		users := request.GetApp().GetUsers()
+		sort.SliceStable(users, func(i, j int) bool {
+			return users[i].Mac < users[j].Mac
+		})
 		js, err := json.Marshal(users)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadGateway)
