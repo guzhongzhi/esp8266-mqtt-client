@@ -5,9 +5,12 @@ jQuery(document).ready(function () {
     var content = '<div>当前应用: <span data-bind="text:appId"></span></div>\
     <div>当前客户端列表:</div> \
     <ul class="users" data-bind="foreach:users">\
-    <li><span data-bind="text:username"></span> <span data-bind="text:wifi"></span> <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:relay"></span> <span data-bind="text:$parent.timeformat(heartbeat_at)"></span></li>\
+    <li><span data-bind="text:username"></span> <span data-bind="text:wifi"></span> \
+        <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:relay"></span> \
+        <span data-bind="text:$parent.timeformat(heartbeat_at)"></span>\
+        <span><a href="javascript:void(0)" data-bind="text:$parent.operationText(relay), event: { click: $parent.operation}"></a></span>\
+        </li>\
     </ul>\
-    <select data-bind="value:currentDevice,options: userMacs,optionsText:\'label\',optionsValue:\'value\'"></select>\
     <div style="margin-top: 10px;">操作</div>\
     <div style="padding:10px 0px;"><a href="javascript:void(0)" class="on-btn">电源开</a> <a href="javascript:void(0)" class="off-btn">电源关</a></div>\
     <ul data-bind="foreach: devices" class="devices"> \
@@ -23,19 +26,38 @@ jQuery(document).ready(function () {
 </ul>'
     jQuery('#content').append(content);
     jQuery('#loading').hide();
-
-    let userMacs = [
-        {
-            value: "",
-            label: "所有设备",
+    
+    let sendCmd = function (cmd,mac = null) {
+        let url = "/" + APP_ID + "/message?cmd=" + cmd;
+        if (mac) {
+            url = "/" + APP_ID + "/" + mac + "/message?cmd=" + cmd;
         }
-    ];
+        console.log(url)
+        jQuery('#loading').show();
+        jQuery.get(url, function (res) {
+            getUsers();
+            setTimeout(function () {
+                jQuery('#loading').hide();
+            }, 500)
+        })
+    }
     let model = {
         devices: devices,
         appId: APP_ID,
         users: ko.observableArray([]),
-        userMacs: ko.observableArray(userMacs),
         currentDevice: "",
+        operation:function(data) {
+            let mac = data.mac;
+            let relay = data.relay;
+            if(relay == "off") {
+                sendCmd("on",mac);
+            } else {
+               sendCmd("off",mac);
+            }
+        },
+        operationText(v) {
+            return v == "off" ? "打开" : "关闭";
+        },
         timeformat:function (v) {
             let now = new Date(v * 1000);
             let
@@ -50,22 +72,14 @@ jQuery(document).ready(function () {
 
     let getUsers = function () {
         jQuery.get("/" + APP_ID + "/users", function (res) {
-            console.log(res);
             model.users.splice(0,1000);
-            model.userMacs.splice(1,1000);
-            console.log(model.users());
             res.map((user)=>{
-                console.log(user);
                 model.users.push(user);
-                model.userMacs.push({
-                    value:user.mac,
-                    label:user.username,
-                })
             })
         })
     }
     getUsers();
-    setInterval(getUsers, 5000);
+    setInterval(getUsers, 10000);
 
     jQuery(".commands-item").click(function () {
         let url = "/" + APP_ID + "/ir?code=" + jQuery(this).attr("data");
@@ -80,20 +94,6 @@ jQuery(document).ready(function () {
             }, 500)
         })
     })
-    let sendCmd = function (cmd) {
-        let url = "/" + APP_ID + "/message?cmd=" + cmd;
-        if (model.currentDevice != "") {
-            url = "/" + APP_ID + "/" + model.currentDevice + "/message?cmd=" + cmd;
-        }
-        console.log(url)
-        jQuery('#loading').show();
-        jQuery.get(url, function (res) {
-            getUsers();
-            setTimeout(function () {
-                jQuery('#loading').hide();
-            }, 500)
-        })
-    }
     jQuery(".on-btn").click(function () {
         sendCmd("on")
     })

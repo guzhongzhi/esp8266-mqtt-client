@@ -203,14 +203,24 @@ void setHigh() {
     relayPINState = "on";
     Serial.println("replay high");
     digitalWrite(relayPIN,HIGH);
-    client.publish(("/" + APP_ID + "/heart-beat").c_str(), deviceInfo().c_str());
+    heartBeat();
 }
 
 void setLow() {
   Serial.println("replay low");
   relayPINState = "off";
   digitalWrite(relayPIN,LOW);
-  client.publish(("/" + APP_ID + "/heart-beat").c_str(), deviceInfo().c_str());
+  heartBeat();
+}
+
+void heartBeat() {
+  if(!client.connected()) {
+    return ;
+  }
+  String heartBeatTopic = "/" + APP_ID + "/heart-beat";
+  Serial.println(heartBeatTopic);
+  Serial.println(deviceInfo().c_str());
+  client.publish(heartBeatTopic.c_str(), deviceInfo().c_str());
 }
 
 void sendHttpOut(String data) {
@@ -266,11 +276,9 @@ void loop(void)
   }
   client.loop();
   long now = millis();
-  if (now - lastMsg > 5000) {
+  if ( lastMsg == 0 ||  (now - lastMsg) > 30000) {
     lastMsg = now;
-    String heartBeatTopic = "/" + APP_ID + "/heart-beat";
-    Serial.println(heartBeatTopic);
-    client.publish(heartBeatTopic.c_str(), deviceInfo().c_str());
+    heartBeat();
   }
   checkIrInput();
 }

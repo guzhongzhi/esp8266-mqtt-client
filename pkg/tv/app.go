@@ -32,7 +32,7 @@ func NewApp(clientId string, opts ...AppOption) *app {
 	appId := strings.Split(clientId, "-")[0]
 	log.Println("new app:", appId)
 	if v, ok := apps[appId]; ok {
-		log.Println("existing")
+		log.Println("app existing",appId)
 		return v
 	}
 	appLocker.Lock()
@@ -123,13 +123,12 @@ func (s *app) OnIRReceived(client mqtt.Client, message mqtt.Message) {
 }
 
 func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
-	fmt.Println("message", fmt.Sprintf("%s", message.Payload()))
+	fmt.Println("on heart beat message", fmt.Sprintf("%s", message.Payload()))
 	now := time.Now().Unix()
 	query, err := url.ParseQuery(string(message.Payload()))
 	if err != nil {
 		fmt.Println("parse query data error:", err)
 	}
-	fmt.Println("query.Encode()", query.Encode())
 	mac := query.Get("mac")
 	if user, ok := s.Users[mac]; ok {
 		fmt.Println("user existing: ", mac)
@@ -154,8 +153,8 @@ func (s *app) init() {
 	client := s.options.client
 	log.Println("subscribe to public ir received:", s.GetIRReceivedTopic())
 	client.Subscribe(s.GetIRReceivedTopic(), s.options.Qos, s.OnIRReceived)
-	log.Println("subscribe to public heart beat topic:", s.GetUserHeartBeatTopic())
-	client.Subscribe(s.GetUserHeartBeatTopic(), s.options.Qos, s.OnHeartBeat)
+	//log.Println("subscribe to public heart beat topic:", s.GetUserHeartBeatTopic())
+	//client.Subscribe(s.GetUserHeartBeatTopic(), s.options.Qos, s.OnHeartBeat)
 }
 
 func (s *app) AddUser(user *User) App {

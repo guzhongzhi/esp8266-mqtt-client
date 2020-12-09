@@ -15,7 +15,6 @@ func SetMQServer(v string) {
 }
 
 func RegistryApp(mqttClient mqtt.Client, message mqtt.Message) {
-	fmt.Println("application-init", string(message.Payload()))
 	query, err := url.ParseQuery(string(message.Payload()))
 	if err != nil {
 		fmt.Println("init application failure:", err.Error())
@@ -23,7 +22,7 @@ func RegistryApp(mqttClient mqtt.Client, message mqtt.Message) {
 	}
 	clientId := query.Get("clientId")
 	app := NewApp(clientId, NewMQTTClientOption(mqttClient))
-	fmt.Println("registry app:", app.GetId())
+	app.OnHeartBeat(mqttClient,message)
 }
 
 func ServeMQTT() {
