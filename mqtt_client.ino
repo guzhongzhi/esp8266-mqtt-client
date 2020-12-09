@@ -217,6 +217,7 @@ void heartBeat() {
   if(!client.connected()) {
     return ;
   }
+  delay(500);
   String heartBeatTopic = "/" + APP_ID + "/heart-beat";
   Serial.println(heartBeatTopic);
   Serial.println(deviceInfo().c_str());
@@ -263,8 +264,6 @@ void setup(void)
       smartConfig();
   }
   delay(2000);
-  sendHttpOut("init");
-  
   irsend.begin();
   setupIR();
 }

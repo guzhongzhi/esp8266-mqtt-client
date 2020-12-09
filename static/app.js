@@ -26,7 +26,7 @@ jQuery(document).ready(function () {
 </ul>'
     jQuery('#content').append(content);
     jQuery('#loading').hide();
-    
+
     let sendCmd = function (cmd,mac = null) {
         let url = "/" + APP_ID + "/message?cmd=" + cmd;
         if (mac) {

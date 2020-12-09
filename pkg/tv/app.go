@@ -134,6 +134,7 @@ func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
 		fmt.Println("user existing: ", mac)
 		user.Relay = query.Get("relay")
 		user.HeartbeatAt = now
+		fmt.Println("user.Relay",user.Relay)
 	} else {
 		fmt.Println("no user: ", mac)
 		user := &User{
@@ -162,7 +163,7 @@ func (s *app) AddUser(user *User) App {
 	defer s.locker.Unlock()
 	s.Users[user.Mac] = user
 	log.Println("subscribe to user topic:", s.GetUserTopic(user))
-	s.options.client.Subscribe(s.GetUserTopic(user), s.options.Qos, s.OnUserTopicDataReceived)
+	//s.options.client.Subscribe(s.GetUserTopic(user), s.options.Qos, s.OnUserTopicDataReceived)
 	return s
 }
 
