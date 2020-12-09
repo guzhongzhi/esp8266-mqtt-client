@@ -19,8 +19,8 @@ func initCtx(ctx *cli.Context) {
 func main() {
 	app.Commands = []*cli.Command{
 		&cli.Command{
-			Name:"init",
-			Usage:"init db",
+			Name:  "init",
+			Usage: "init db",
 			Action: func(ctx *cli.Context) error {
 				initCtx(ctx)
 				tv.CreateTables()
@@ -28,14 +28,19 @@ func main() {
 			},
 		},
 		&cli.Command{
-			Name:"serve",
-			Usage:"start http server and subscribe to mqtt server",
+			Name:  "serve",
+			Usage: "start http server and subscribe to mqtt server",
 			Action: func(ctx *cli.Context) error {
 				initCtx(ctx)
+				listen := ctx.String("listen")
 				var wg sync.WaitGroup
 				wg.Add(2)
-				tv.ServeMQTT()
-				tv.ServeHttp()
+				go func() {
+					tv.ServeMQTT()
+				}()
+				go func() {
+					tv.ServeHttp(listen)
+				}()
 				wg.Wait()
 				return nil
 			},
@@ -44,14 +49,19 @@ func main() {
 
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
-			Name:"mq",
-			Usage:"mqtt server url, such as 1.0.0.0:1883",
-			Value:"tcp://192.168.18.159:1883",
+			Name:  "mq",
+			Usage: "mqtt server url, such as 1.0.0.0:1883",
+			Value: "tcp://118.31.246.195:1883",
 		},
 		&cli.StringFlag{
-			Name:"sqlite",
-			Usage:"sqlite file name",
-			Value:"data.db",
+			Name:  "sqlite",
+			Usage: "sqlite file name",
+			Value: "data.db",
+		},
+		&cli.StringFlag{
+			Name:  "listen",
+			Usage: "http listen port address and port",
+			Value: "0.0.0.0:9900",
 		},
 	}
 	app.Run(os.Args)
