@@ -69,7 +69,9 @@ jQuery(document).ready(function () {
         console.log(url)
         jQuery('#loading').show();
         jQuery.get(url, function (res) {
-            jQuery('#loading').hide();
+            setTimeout(function () {
+                jQuery('#loading').hide();
+            }, 1000)
         })
     })
     let sendCmd = function (cmd) {
@@ -80,7 +82,9 @@ jQuery(document).ready(function () {
         console.log(url)
         jQuery('#loading').show();
         jQuery.get(url, function (res) {
-            jQuery('#loading').hide();
+            setTimeout(function () {
+                jQuery('#loading').hide();
+            }, 1000)
         })
     }
     jQuery(".on-btn").click(function () {
