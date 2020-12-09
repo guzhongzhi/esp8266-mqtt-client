@@ -1,3 +1,54 @@
+.title {
+    position: fixed;
+    top: 0px;
+    padding: 20px 0px;
+    text-align: center;
+    background: #FFF;
+    width: 100%;
+    border-bottom: solid 1px #e1e1e1;
+}
+
+.title h1 {
+    font-size: 24px;
+    text-align: center;
+    padding: 0px;
+    margin: 0px;
+}
+
 #content {
-    padding-top: 100px;
+    padding: 80px 10px 20px 10px;
+}
+
+.users,
+.users li {
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+.commands,
+.commands li,
+.devices,
+.devices li {
+    padding: 0px;
+    margin: 0px;
+    list-style: none;
+}
+
+.commands-item {
+    float: left;
+    padding: 6px 10px;
+    border: solid 1px #e1e1e1;
+    margin-right: 10px;
+    margin-top: 10px;
+    min-width: 60px;
+    text-align: center;
+}
+
+.device {
+    clear: both;
+}
+
+.device-title {
+    margin-top: 30px;
 }

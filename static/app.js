@@ -4,7 +4,7 @@ jQuery(document).ready(function () {
 
     var content = '<div>当前应用: <span data-bind="text:appId"></span></div>\
     <div>当前客户端列表:</div> \
-    <ul data-bind="foreach:users">\
+    <ul class="users" data-bind="foreach:users">\
     <li><span data-bind="text:mac"></span> <span data-bind="text:mac"></span> <span data-bind="text:relay"></span></li>\
     </ul>\
     <select data-bind="value:currentDevice,options: userMacs,optionsText:\'label\',optionsValue:\'value\'"></select>\
@@ -12,12 +12,13 @@ jQuery(document).ready(function () {
     <div><a href="javascript:void(0)" class="on-btn">电源开</a> <a href="javascript:void(0)" class="off-btn">电源关</a></div>\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
-        <b data-bind="text: name"></b> \
+        <div class="device-title"><b data-bind="text: name"></b></div> \
         <ul data-bind="foreach: commands" class="commands"> \
             <li> \
             <a href="javascript:void(0)" class="commands-item" data-bind="attr: {data:value},text:label"> </a> \
             </li> \
         </ul> \
+        <div style="clear:both"></div>\
     </li> \
 </ul>'
     jQuery('#content').append(content);
