@@ -52,8 +52,10 @@ const uint16_t kIrLed = 4; // ESP8266 GPIO pin to use. Recommended: 4 (D2). 红�
 IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
 
 //MQTT
-String clientId = "camera360-";
+String APP_ID = "camera360";
+String clientId = "";
 unsigned long lastMsg = 0;
+//String MQTT_SERVER = "118.31.246.195";
 String MQTT_SERVER = "mqtt.gulusoft.com";
 
 //红外接收
@@ -180,12 +182,12 @@ void reconnect() {
     Serial.print("Attempting MQTT "+MQTT_SERVER+" connection...");
     // Attempt to connect
     client.setBufferSize(2048);
-    char * globalTopic = "camera360-global";
-    if (client.connect(clientId.c_str(),"admin","admin",globalTopic,1,false,"")) {
+    String publicTopic =  "/" + APP_ID + "/public-topic";
+    if (client.connect(clientId.c_str(),"admin","admin")) {
       Serial.println("connected");
-      String ss = clientId + "-" + WiFi.macAddress();
+      String ss =  ("/" + APP_ID + "/user/" +  WiFi.macAddress());
       client.subscribe(ss.c_str(),1);
-      client.subscribe(globalTopic,1);
+      client.subscribe(publicTopic.c_str(),1);
       client.setCallback(callback);
     } else {
       Serial.print("failed, rc=");
@@ -201,14 +203,14 @@ void setHigh() {
     relayPINState = "on";
     Serial.println("replay high");
     digitalWrite(relayPIN,HIGH);
-    client.publish("camera360-hart-beat", deviceInfo().c_str());
+    client.publish(("/" + APP_ID + "/heart-beat").c_str(), deviceInfo().c_str());
 }
 
 void setLow() {
   Serial.println("replay low");
   relayPINState = "off";
   digitalWrite(relayPIN,LOW);
-  client.publish("camera360-hart-beat", deviceInfo().c_str());
+  client.publish(("/" + APP_ID + "/heart-beat").c_str(), deviceInfo().c_str());
 }
 
 void sendHttpOut(String data) {
@@ -216,7 +218,7 @@ void sendHttpOut(String data) {
     if(data.length() > 0) {
       commonInfo += ("&data=" + data);
     }
-    client.publish("camera360-ir-received", commonInfo.c_str());
+    client.publish(("/" + APP_ID + "/ir-received").c_str(), commonInfo.c_str());
 }
 
 String deviceInfo() {
@@ -237,7 +239,7 @@ String deviceInfo() {
 
 void setup(void)
 {
-  clientId += String(random(0xffff), HEX);
+  clientId = APP_ID + "-" + String(random(0xffff), HEX);
   Serial.begin(115200);
   Serial.println("");
   pinMode(relayPIN, OUTPUT);
@@ -254,7 +256,7 @@ void setup(void)
   sendHttpOut("init");
   
   irsend.begin();
-  setpuIr();
+  setupIR();
 }
 
 void loop(void)
@@ -266,7 +268,9 @@ void loop(void)
   long now = millis();
   if (now - lastMsg > 5000) {
     lastMsg = now;
-    client.publish("camera360-hart-beat", deviceInfo().c_str());
+    String heartBeatTopic = "/" + APP_ID + "/heart-beat";
+    Serial.println(heartBeatTopic);
+    client.publish(heartBeatTopic.c_str(), deviceInfo().c_str());
   }
   checkIrInput();
 }
@@ -307,7 +311,7 @@ void sendCode(string message, string type) {
 
 //红外接收
 
-void setpuIr() {
+void setupIR() {
   assert(irutils::lowLevelSanityCheck() == 0);
   Serial.printf("\n" D_STR_IRRECVDUMP_STARTUP "\n", kRecvPin);
 #if DECODE_HASH

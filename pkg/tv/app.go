@@ -50,6 +50,7 @@ func NewApp(clientId string, opts ...AppOption) *app {
 		options: options,
 		Users:   make(map[string]*User),
 	}
+	newApp.init()
 	apps[appId] = newApp
 	return newApp
 }

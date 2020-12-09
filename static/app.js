@@ -5,11 +5,11 @@ jQuery(document).ready(function () {
     var content = '<div>当前应用: <span data-bind="text:appId"></span></div>\
     <div>当前客户端列表:</div> \
     <ul class="users" data-bind="foreach:users">\
-    <li><span data-bind="text:mac"></span> <span data-bind="text:mac"></span> <span data-bind="text:relay"></span></li>\
+    <li><span data-bind="text:username"></span> <span data-bind="text:wifi"></span> <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:relay"></span> <span data-bind="text:$parent.timeformat(heartbeat_at)"></span></li>\
     </ul>\
     <select data-bind="value:currentDevice,options: userMacs,optionsText:\'label\',optionsValue:\'value\'"></select>\
-    <div>操作</div>\
-    <div><a href="javascript:void(0)" class="on-btn">电源开</a> <a href="javascript:void(0)" class="off-btn">电源关</a></div>\
+    <div style="margin-top: 10px;">操作</div>\
+    <div style="padding:10px 0px;"><a href="javascript:void(0)" class="on-btn">电源开</a> <a href="javascript:void(0)" class="off-btn">电源关</a></div>\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
         <div class="device-title"><b data-bind="text: name"></b></div> \
@@ -24,38 +24,44 @@ jQuery(document).ready(function () {
     jQuery('#content').append(content);
     jQuery('#loading').hide();
 
-    let users = [
-        {
-            mac: "EEEE",
-            relay: "off",
-        },
-        {
-            mac: "FFFFF",
-            relay: "off",
-        }
-    ];
     let userMacs = [
         {
             value: "",
             label: "所有设备",
-        },
-        {
-            value: "EEEE",
-            label: "B3",
         }
     ];
     let model = {
         devices: devices,
         appId: APP_ID,
-        users: users,
-        userMacs: userMacs,
+        users: ko.observableArray([]),
+        userMacs: ko.observableArray(userMacs),
         currentDevice: "",
+        timeformat:function (v) {
+            let now = new Date(v * 1000);
+            let
+                 　　y = now.getFullYear(),
+                 　　m = now.getMonth() + 1,
+                 　　d = now.getDate();
+             　　return y + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d) + " " + now.toTimeString().substr(0, 8);
+
+        }
     }
     ko.applyBindings(model, document.getElementById("content"));
 
     let getUsers = function () {
         jQuery.get("/" + APP_ID + "/users", function (res) {
             console.log(res);
+            model.users.splice(0,1000);
+            model.userMacs.splice(1,1000);
+            console.log(model.users());
+            res.map((user)=>{
+                console.log(user);
+                model.users.push(user);
+                model.userMacs.push({
+                    value:user.mac,
+                    label:user.username,
+                })
+            })
         })
     }
     getUsers();
@@ -71,20 +77,21 @@ jQuery(document).ready(function () {
         jQuery.get(url, function (res) {
             setTimeout(function () {
                 jQuery('#loading').hide();
-            }, 1000)
+            }, 500)
         })
     })
     let sendCmd = function (cmd) {
-        let url = "/" + APP_ID + "/message?cmd=off";
+        let url = "/" + APP_ID + "/message?cmd=" + cmd;
         if (model.currentDevice != "") {
-            url = "/" + APP_ID + "/" + model.currentDevice + "/message?cmd=off";
+            url = "/" + APP_ID + "/" + model.currentDevice + "/message?cmd=" + cmd;
         }
         console.log(url)
         jQuery('#loading').show();
         jQuery.get(url, function (res) {
+            getUsers();
             setTimeout(function () {
                 jQuery('#loading').hide();
-            }, 1000)
+            }, 500)
         })
     }
     jQuery(".on-btn").click(function () {
