@@ -1,6 +1,7 @@
 package tv
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/eclipse/paho.mqtt.golang"
@@ -30,11 +31,11 @@ func Apps() map[string]*app {
 
 func NewApp(clientId string, opts ...AppOption) *app {
 	appId := strings.Split(clientId, "-")[0]
-	log.Println("new app:", appId)
 	if v, ok := apps[appId]; ok {
-		log.Println("app existing",appId)
+		log.Println("app existing", appId)
 		return v
 	}
+	log.Println("new app:", appId)
 	appLocker.Lock()
 	defer appLocker.Unlock()
 	if v, ok := apps[appId]; ok {
@@ -61,6 +62,7 @@ type app struct {
 	options *AppOptions
 }
 
+//发送消息到整个app
 func (s *app) GetPublicTopic() string {
 	return "/" + s.options.Id + "/public-topic"
 }
@@ -72,10 +74,12 @@ func (s *app) GetUserByMac(mac string) *User {
 	return nil
 }
 
+//客户端心跳上报
 func (s *app) GetUserHeartBeatTopic() string {
 	return "/" + s.options.Id + "/heart-beat"
 }
 
+//客户端接收的红外消息上报
 func (s *app) GetIRReceivedTopic() string {
 	return "/" + s.options.Id + "/ir-received"
 }
@@ -89,10 +93,12 @@ func (s *app) SendMessageToTopic(topic string, message interface{}) mqtt.Token {
 	return s.options.client.Publish(topic, s.options.Qos, false, message)
 }
 
+//客户端接收消息的topic
 func (s *app) GetUserTopic(u *User) string {
 	return "/" + s.options.Id + "/user/" + u.GetTopic()
 }
 
+//发送消息给指定客户端
 func (s *app) SendMessageToUser(mac string, message interface{}) (mqtt.Token, error) {
 	user, ok := s.Users[mac]
 	if !ok {
@@ -130,11 +136,14 @@ func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
 		fmt.Println("parse query data error:", err)
 	}
 	mac := query.Get("mac")
+	if mac == "" {
+		return
+	}
 	if user, ok := s.Users[mac]; ok {
 		fmt.Println("user existing: ", mac)
 		user.Relay = query.Get("relay")
 		user.HeartbeatAt = now
-		fmt.Println("user.Relay",user.Relay)
+		fmt.Println("user.Relay", user.Relay)
 	} else {
 		fmt.Println("no user: ", mac)
 		user := &User{
@@ -148,11 +157,25 @@ func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
 		}
 		s.AddUser(user)
 	}
+	s.sendUsersToWS()
+}
+
+func (s *app) sendUsersToWS() {
+	msg := WebSocketClientMessage{
+		Operation: "users",
+		Data:      s.Users,
+	}
+	js, err := json.Marshal(msg)
+	if err == nil {
+		fmt.Println("js", string(js))
+		hub.broadcast <- js
+	}
 }
 
 func (s *app) init() {
 	client := s.options.client
 	log.Println("subscribe to public ir received:", s.GetIRReceivedTopic())
+	log.Println("app boardcast tocpi:", s.GetPublicTopic())
 	client.Subscribe(s.GetIRReceivedTopic(), s.options.Qos, s.OnIRReceived)
 	//log.Println("subscribe to public heart beat topic:", s.GetUserHeartBeatTopic())
 	//client.Subscribe(s.GetUserHeartBeatTopic(), s.options.Qos, s.OnHeartBeat)
@@ -162,7 +185,7 @@ func (s *app) AddUser(user *User) App {
 	s.locker.Lock()
 	defer s.locker.Unlock()
 	s.Users[user.Mac] = user
-	log.Println("subscribe to user topic:", s.GetUserTopic(user))
+	log.Println("user topic:", s.GetUserTopic(user))
 	//s.options.client.Subscribe(s.GetUserTopic(user), s.options.Qos, s.OnUserTopicDataReceived)
 	return s
 }

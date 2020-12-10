@@ -1,5 +1,51 @@
 const APP_ID = "camera360";
 
+
+function WebSocketTest(model) {
+    if ("WebSocket" in window) {
+
+    } else {
+        console.log("您的浏览器不支持 WebSocket!");
+        return
+    }
+
+    // 打开一个 web socket
+    var ws = new WebSocket("ws://localhost:9900/ws");
+
+    ws.onopen = function () {
+        ws.send(JSON.stringify({
+            operation: "users",
+            data: APP_ID,
+        }));
+    };
+
+    ws.onmessage = function (evt) {
+        var data = evt.data;
+        console.log(data)
+        try {
+            data = JSON.parse(data);
+            switch (data.operation) {
+                case "users":
+                    console.log(data.data);
+                    model.users.splice(0, 1000);
+                    Object.values(data.data).map((user) => {
+                        model.users.push(user);
+                    })
+
+                    break;
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    };
+    ws.onclose = function () {
+        // 关闭 websocket
+        setTimeout(function (model) {
+            WebSocketTest(model);
+        }, 5000);
+    };
+}
+
 jQuery(document).ready(function () {
 
     var content = '<div>当前应用: <span data-bind="text:appId"></span></div>\
@@ -27,7 +73,7 @@ jQuery(document).ready(function () {
     jQuery('#content').append(content);
     jQuery('#loading').hide();
 
-    let sendCmd = function (cmd,mac = null) {
+    let sendCmd = function (cmd, mac = null) {
         let url = "/" + APP_ID + "/message?cmd=" + cmd;
         if (mac) {
             url = "/" + APP_ID + "/" + mac + "/message?cmd=" + cmd;
@@ -46,25 +92,25 @@ jQuery(document).ready(function () {
         appId: APP_ID,
         users: ko.observableArray([]),
         currentDevice: "",
-        operation:function(data) {
+        operation: function (data) {
             let mac = data.mac;
             let relay = data.relay;
-            if(relay == "off") {
-                sendCmd("on",mac);
+            if (relay == "off") {
+                sendCmd("on", mac);
             } else {
-               sendCmd("off",mac);
+                sendCmd("off", mac);
             }
         },
         operationText(v) {
             return v == "off" ? "打开" : "关闭";
         },
-        timeformat:function (v) {
+        timeformat: function (v) {
             let now = new Date(v * 1000);
             let
-                 　　y = now.getFullYear(),
-                 　　m = now.getMonth() + 1,
-                 　　d = now.getDate();
-             　　return y + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d) + " " + now.toTimeString().substr(0, 8);
+                y = now.getFullYear(),
+                m = now.getMonth() + 1,
+                d = now.getDate();
+            return y + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d) + " " + now.toTimeString().substr(0, 8);
 
         }
     }
@@ -72,15 +118,15 @@ jQuery(document).ready(function () {
 
     let getUsers = function () {
         jQuery.get("/" + APP_ID + "/users", function (res) {
-            model.users.splice(0,1000);
-            res.map((user)=>{
+            model.users.splice(0, 1000);
+            res.map((user) => {
                 model.users.push(user);
             })
         })
     }
-    getUsers();
-    setInterval(getUsers, 10000);
-
+    //getUsers();
+    //setInterval(getUsers, 10000);
+    WebSocketTest(model);
     jQuery(".commands-item").click(function () {
         let url = "/" + APP_ID + "/ir?code=" + jQuery(this).attr("data");
         if (model.currentDevice != "") {

@@ -1,8 +1,8 @@
 package tv
 
 import (
-	"fmt"
 	"github.com/eclipse/paho.mqtt.golang"
+	"log"
 	"net/url"
 	"time"
 )
@@ -17,31 +17,37 @@ func SetMQServer(v string) {
 func RegistryApp(mqttClient mqtt.Client, message mqtt.Message) {
 	query, err := url.ParseQuery(string(message.Payload()))
 	if err != nil {
-		fmt.Println("init application failure:", err.Error())
+		log.Println("init application failure:", err.Error())
 		return
 	}
 	clientId := query.Get("clientId")
 	app := NewApp(clientId, NewMQTTClientOption(mqttClient))
-	app.OnHeartBeat(mqttClient,message)
+	app.OnHeartBeat(mqttClient, message)
 }
 
 func ServeMQTT() {
 	opts := mqtt.NewClientOptions()
-	fmt.Println("mqServer:", mqServer)
-	opts.AddBroker(mqServer)
+	log.Println("mqServer:", mqServer)
+	temp, err := url.Parse(mqServer)
+	if err != nil {
+		log.Fatal("invalid mq server: ", mqServer)
+	}
+	opts.AddBroker(temp.Hostname() + ":" + temp.Port())
 	opts.ConnectTimeout = time.Second * 5
 	opts.SetClientID("server")
+	opts.SetPingTimeout(1 * time.Second)
+	opts.Username = temp.User.Username()
+	opts.Password, _ = temp.User.Password()
 	opts.OnConnect = func(client mqtt.Client) {
+		log.Println("heart-beat")
 		client.Subscribe("/camera360/heart-beat", 2, RegistryApp)
 	}
 	var token mqtt.Token
 	client = mqtt.NewClient(opts)
-	for !client.IsConnected() {
-		fmt.Println("mqtt start to connect ")
-		token = client.Connect()
-		time.Sleep(time.Second * 5)
+	token = client.Connect()
+	token.Wait()
+	if token.Error() != nil {
+		log.Fatal("mqtt connect: ", token.Error(), client.IsConnected())
 	}
-	if token != nil {
-		fmt.Println("mqtt connect: ", token.Error(), client.IsConnected())
-	}
+	log.Println("mqtt connected")
 }

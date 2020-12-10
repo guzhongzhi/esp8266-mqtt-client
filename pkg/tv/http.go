@@ -77,6 +77,10 @@ func ServeHttp(listen string) {
 		writer.Write([]byte(tmp))
 	})
 
+	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		WebSocketHandler(NewHub(), w, r)
+	})
+
 	r.HandleFunc("/apps", func(writer http.ResponseWriter, request *http.Request) {
 		j, err := json.Marshal(Apps())
 		fmt.Println("apps", err)
@@ -94,7 +98,7 @@ func ServeHttp(listen string) {
 			http.Error(w, err.Error(), http.StatusBadGateway)
 			return
 		}
-		w.Header().Set("Content-Type","application/json")
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(js)
 	})

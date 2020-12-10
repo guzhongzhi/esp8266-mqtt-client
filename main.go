@@ -35,6 +35,7 @@ func main() {
 				listen := ctx.String("listen")
 				var wg sync.WaitGroup
 				wg.Add(2)
+				go tv.NewHub().Run()
 				go func() {
 					tv.ServeMQTT()
 				}()
@@ -51,7 +52,7 @@ func main() {
 		&cli.StringFlag{
 			Name:  "mq",
 			Usage: "mqtt server url, such as 1.0.0.0:1883",
-			Value: "tcp://mqtt.gulusoft.com:1883",
+			Value: "tcp://mqtt:mqtt@118.31.246.195:1883",
 		},
 		&cli.StringFlag{
 			Name:  "sqlite",
