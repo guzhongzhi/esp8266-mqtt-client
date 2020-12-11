@@ -10,7 +10,7 @@ function WebSocketTest(model) {
     }
 
     // 打开一个 web socket
-    var ws = new WebSocket("ws://localhost:9900/ws");
+    var ws = new WebSocket("ws://" + location.host + "/ws");
 
     ws.onopen = function () {
         ws.send(JSON.stringify({

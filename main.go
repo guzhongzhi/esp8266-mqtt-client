@@ -1,9 +1,11 @@
 package main
 
 import (
+	"camera360.com/tv/pkg/runtime"
 	"camera360.com/tv/pkg/tv"
 	"github.com/urfave/cli/v2" // imports as package "cli"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -12,6 +14,8 @@ var app = cli.NewApp()
 func initCtx(ctx *cli.Context) {
 	mq := ctx.String("mq")
 	db := ctx.String("sqlite")
+	base := ctx.String("base")
+	runtime.PATH = base
 	tv.SetDbFileName(db)
 	tv.SetMQServer(mq)
 }
@@ -48,6 +52,7 @@ func main() {
 		},
 	}
 
+	dir := filepath.Dir(filepath.Dir(os.Args[0]))
 	app.Flags = []cli.Flag{
 		&cli.StringFlag{
 			Name:  "mq",
@@ -63,6 +68,12 @@ func main() {
 			Name:  "listen",
 			Usage: "http listen port address and port",
 			Value: "0.0.0.0:9900",
+		},
+
+		&cli.StringFlag{
+			Name:  "base",
+			Usage: "base directory",
+			Value: dir,
 		},
 	}
 	app.Run(os.Args)

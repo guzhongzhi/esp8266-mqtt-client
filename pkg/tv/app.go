@@ -1,12 +1,14 @@
 package tv
 
 import (
+	"camera360.com/tv/pkg/runtime"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -144,6 +146,7 @@ func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
 		user.Relay = query.Get("relay")
 		user.HeartbeatAt = now
 		fmt.Println("user.Relay", user.Relay)
+		saveUser(s.GetDataPath(), user)
 	} else {
 		fmt.Println("no user: ", mac)
 		user := &User{
@@ -179,6 +182,7 @@ func (s *app) init() {
 	client.Subscribe(s.GetIRReceivedTopic(), s.options.Qos, s.OnIRReceived)
 	//log.Println("subscribe to public heart beat topic:", s.GetUserHeartBeatTopic())
 	//client.Subscribe(s.GetUserHeartBeatTopic(), s.options.Qos, s.OnHeartBeat)
+	s.Users = loadUsers(s.GetDataPath())
 }
 
 func (s *app) AddUser(user *User) App {
@@ -187,7 +191,15 @@ func (s *app) AddUser(user *User) App {
 	s.Users[user.Mac] = user
 	log.Println("user topic:", s.GetUserTopic(user))
 	//s.options.client.Subscribe(s.GetUserTopic(user), s.options.Qos, s.OnUserTopicDataReceived)
+	err := saveUser(s.GetDataPath(), user)
+	fmt.Println("save user error:", err)
 	return s
+}
+
+func (s *app) GetDataPath() string {
+	p := runtime.PATH + string(os.PathSeparator) + "data" + string(os.PathSeparator) + s.options.Id
+	os.Mkdir(p, os.ModePerm)
+	return p
 }
 
 func (s *app) GetUsers() []*User {
