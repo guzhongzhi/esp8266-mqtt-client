@@ -3,6 +3,7 @@ package tv
 import (
 	"github.com/eclipse/paho.mqtt.golang"
 	"log"
+	"math/rand"
 	"net/url"
 	"time"
 )
@@ -25,6 +26,16 @@ func RegistryApp(mqttClient mqtt.Client, message mqtt.Message) {
 	app.OnHeartBeat(mqttClient, message)
 }
 
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func RandStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
+
 func ServeMQTT() {
 	opts := mqtt.NewClientOptions()
 	log.Println("mqServer:", mqServer)
@@ -34,13 +45,19 @@ func ServeMQTT() {
 	}
 	opts.AddBroker(temp.Hostname() + ":" + temp.Port())
 	opts.ConnectTimeout = time.Second * 5
-	opts.SetClientID("server")
+	opts.SetClientID("server-" + RandStringBytes(5))
 	opts.SetPingTimeout(1 * time.Second)
 	opts.Username = temp.User.Username()
 	opts.Password, _ = temp.User.Password()
 	opts.OnConnect = func(client mqtt.Client) {
 		log.Println("heart-beat")
 		client.Subscribe("/camera360/heart-beat", 2, RegistryApp)
+	}
+	opts.OnConnectionLost = func(i mqtt.Client, e error) {
+		log.Println("connect lost: ", e.Error())
+	}
+	opts.OnReconnecting = func(i mqtt.Client, options *mqtt.ClientOptions) {
+		log.Println("reconnect")
 	}
 	var token mqtt.Token
 	client = mqtt.NewClient(opts)
