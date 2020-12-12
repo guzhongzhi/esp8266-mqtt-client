@@ -43,13 +43,14 @@ using namespace std;
 WiFiClient espClient;
 
 //继电器及状态LED
-const uint16_t statePIN = 0;  //ESP8266 GPIO pin to use. Recommended: 0 (D3). 开机状态
-const uint16_t relayPIN = 5; //ESP8266 GPIO pin to use. Recommended: 5 (D1). 继电器
+const uint16_t statePIN = 2;  //ESP8266 GPIO pin to use. Recommended: 2 . 开机状态
+const uint16_t relayPIN = 0; //ESP8266 GPIO pin to use. Recommended: 0  继电器
 String relayPINState = "off";
 
 //红外发射
 const uint16_t kIrLed = 4; // ESP8266 GPIO pin to use. Recommended: 4 (D2). 红外
 IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
+int isIrEnabled = 0; //是否启用红外输入
 
 //MQTT
 String APP_ID = "guz";
@@ -263,8 +264,10 @@ void setup(void)
       smartConfig();
   }
   delay(2000);
-  irsend.begin();
-  setupIR();
+  if(isIrEnabled == 1 ) {
+    irsend.begin();
+    setupIR();    
+  }
 }
 
 void loop(void)
@@ -278,7 +281,9 @@ void loop(void)
     lastMsg = now;
     heartBeat();
   }
-  checkIrInput();
+  if(isIrEnabled == 1) {
+    checkIrInput();
+  }
 }
 
 string replaceCommaToSpace(string s) {
