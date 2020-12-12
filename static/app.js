@@ -81,10 +81,6 @@ jQuery(document).ready(function () {
         console.log(url)
         jQuery('#loading').show();
         jQuery.get(url, function (res) {
-            getUsers();
-            setTimeout(function () {
-                jQuery('#loading').hide();
-            }, 500)
         })
     }
     let model = {
