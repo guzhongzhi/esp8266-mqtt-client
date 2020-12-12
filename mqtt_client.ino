@@ -52,11 +52,10 @@ const uint16_t kIrLed = 4; // ESP8266 GPIO pin to use. Recommended: 4 (D2). 红�
 IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
 
 //MQTT
-String APP_ID = "camera360";
+String APP_ID = "guz";
 String clientId = "";
 unsigned long lastMsg = 0;
-//String MQTT_SERVER = "118.31.246.195";
-String MQTT_SERVER = "mqtt.gulusoft.com";
+String MQTT_SERVER = "118.31.246.195";
 
 //红外接收
 const uint16_t kRecvPin = 2;
@@ -183,7 +182,7 @@ void reconnect() {
     // Attempt to connect
     client.setBufferSize(2048);
     String publicTopic =  "/" + APP_ID + "/public-topic";
-    if (client.connect(clientId.c_str(),"admin","admin")) {
+    if (client.connect(clientId.c_str(),"mqtt","mqtt")) {
       Serial.println("connected");
       String ss =  ("/" + APP_ID + "/user/" +  WiFi.macAddress());
       client.subscribe(ss.c_str(),1);
@@ -275,7 +274,7 @@ void loop(void)
   }
   client.loop();
   long now = millis();
-  if ( lastMsg == 0 ||  (now - lastMsg) > 30000) {
+  if ( lastMsg == 0 ||  (now - lastMsg) > 10000) {
     lastMsg = now;
     heartBeat();
   }

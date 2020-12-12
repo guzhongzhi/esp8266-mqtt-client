@@ -52,6 +52,7 @@ func ServeMQTT() {
 	opts.OnConnect = func(client mqtt.Client) {
 		log.Println("heart-beat")
 		client.Subscribe("/camera360/heart-beat", 2, RegistryApp)
+		client.Subscribe("/guz/heart-beat", 2, RegistryApp)
 	}
 	opts.OnConnectionLost = func(i mqtt.Client, e error) {
 		log.Println("connect lost: ", e.Error())
