@@ -1,4 +1,4 @@
-const APP_ID = "camera360";
+const APP_ID = "guz";
 
 
 function WebSocketTest(model) {
