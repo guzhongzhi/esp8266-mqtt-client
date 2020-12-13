@@ -81,6 +81,7 @@ jQuery(document).ready(function () {
         console.log(url)
         jQuery('#loading').show();
         jQuery.get(url, function (res) {
+            jQuery('#loading').hide();
         })
     }
     let model = {
