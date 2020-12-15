@@ -50,7 +50,6 @@ String relayPINState = "off";
 //红外发射
 const uint16_t kIrLed = 4; // ESP8266 GPIO pin to use. Recommended: 4 (D2). 红外
 IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
-int isIrEnabled = 0; //是否启用红外输入
 
 //MQTT
 String APP_ID = "guz";
@@ -59,6 +58,7 @@ unsigned long lastMsg = 0;
 String MQTT_SERVER = "118.31.246.195";
 
 //红外接收
+int isIrEnabled = 1; //是否启用红外输入
 const uint16_t kRecvPin = 2;
 const uint16_t kCaptureBufferSize = 1024;
 #if DECODE_AC
@@ -209,7 +209,8 @@ void setHigh() {
 void setLow() {
   Serial.println("replay low");
   relayPINState = "off";
-  digitalWrite(relayPIN,LOW);
+  //digitalWrite(relayPIN,LOW);
+  analogWrite(relayPIN,0);
   heartBeat();
 }
 
