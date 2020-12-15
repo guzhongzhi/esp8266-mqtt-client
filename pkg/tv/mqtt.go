@@ -36,7 +36,12 @@ func RandStringBytes(n int) string {
 	return string(b)
 }
 
+func newServerId() string {
+	return "server-" + RandStringBytes(15)
+}
+
 func ServeMQTT() {
+	clientId := newServerId()
 	opts := mqtt.NewClientOptions()
 	log.Println("mqServer:", mqServer)
 	temp, err := url.Parse(mqServer)
@@ -45,7 +50,7 @@ func ServeMQTT() {
 	}
 	opts.AddBroker(temp.Hostname() + ":" + temp.Port())
 	opts.ConnectTimeout = time.Second * 5
-	opts.SetClientID("server-" + RandStringBytes(5))
+	opts.SetClientID(clientId)
 	opts.SetPingTimeout(1 * time.Second)
 	opts.Username = temp.User.Username()
 	opts.Password, _ = temp.User.Password()
@@ -65,6 +70,7 @@ func ServeMQTT() {
 	token = client.Connect()
 	token.Wait()
 	if token.Error() != nil {
+		clientId = newServerId()
 		log.Fatal("mqtt connect: ", token.Error(), client.IsConnected())
 	}
 	log.Println("mqtt connected")
