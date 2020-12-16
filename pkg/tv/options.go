@@ -4,9 +4,9 @@ import "github.com/eclipse/paho.mqtt.golang"
 
 type AppOption func(opts *AppOptions)
 
-func NewAppClientIdOption(id string) AppOption {
+func NewAppNameOption(name string) AppOption {
 	return func(opts *AppOptions) {
-		opts.Id = id
+		opts.Name = name
 	}
 }
 
@@ -19,6 +19,7 @@ func NewMQTTClientOption(client mqtt.Client) AppOption {
 type AppOptions struct {
 	client mqtt.Client
 	Id     string
+	Name   string
 	Qos    byte
 }
 

@@ -12,6 +12,7 @@ import (
 
 type WebSocketClientMessage struct {
 	Operation string      `json:"operation"`
+	AppName   string      `json:"appName"`
 	Data      interface{} `json:"data"`
 }
 
@@ -68,6 +69,9 @@ var (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
 
 // Client is a middleman between the websocket connection and the hub.
@@ -111,7 +115,11 @@ func (c *Client) readPump() {
 		}
 		switch op.Operation {
 		case "users":
-			app := NewApp(fmt.Sprintf("%s", op.Data))
+			appName := op.AppName
+			if appName == "" {
+				appName = fmt.Sprintf("%s", op.Data)
+			}
+			app := NewApp(appName)
 			app.sendUsersToWS()
 		}
 		//c.hub.broadcast <- message

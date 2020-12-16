@@ -50,9 +50,9 @@ jQuery(document).ready(function () {
     var content = '<div>当前应用: <span data-bind="text:appId"></span></div>\
     <div>当前客户端列表:</div> \
     <ul class="users" data-bind="foreach:users">\
-    <li><span data-bind="text:username"></span> <span data-bind="text:wifi"></span> \
+    <li><span data-bind="text:name"></span> <span data-bind="text:wifi"></span> \
         <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:relay"></span> \
-        <span data-bind="text:$parent.timeformat(heartbeat_at)"></span>\
+        <span data-bind="text:$parent.timeformat(heartbeatAt)"></span>\
         <span><a href="javascript:void(0)" data-bind="text:$parent.operationText(relay), event: { click: $parent.operation}"></a></span>\
         </li>\
     </ul>\
@@ -122,7 +122,7 @@ jQuery(document).ready(function () {
             })
         })
     }
-    //getUsers();
+    getUsers();
     //setInterval(getUsers, 10000);
     WebSocketTest(model);
     jQuery(".commands-item").click(function () {

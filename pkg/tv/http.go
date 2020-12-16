@@ -1,9 +1,11 @@
 package tv
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -21,7 +23,7 @@ func (s *AppRequest) GetApp() App {
 	return NewApp(s.AppId)
 }
 
-func (s *AppRequest) GetUser() *User {
+func (s *AppRequest) GetUser() *DevicePO {
 	app := s.GetApp()
 	return app.GetUserByMac(s.Mac)
 }
@@ -88,6 +90,21 @@ func ServeHttp(listen string) {
 		j, err := json.Marshal(Apps())
 		fmt.Println("apps", err)
 		writer.Write(j)
+	})
+	r.HandleFunc("/{appId}/device/{mac}/save", func(w http.ResponseWriter, r *http.Request) {
+		request := NewAppRequest(r)
+		d, _ := NewDevice(context.Background())
+		d.LoadByMac(request.Mac)
+		if d.HasId() == false {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		devicePO := &DevicePO{}
+		body, _ := ioutil.ReadAll(r.Body)
+		json.Unmarshal(body, devicePO)
+		d.GetPlainObject().Name = devicePO.Name
+		d.Save()
+		w.Write([]byte("OK"))
 	})
 
 	r.HandleFunc("/{appId}/users", func(w http.ResponseWriter, r *http.Request) {

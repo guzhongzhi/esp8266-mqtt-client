@@ -1,14 +1,14 @@
 package tv
 
 import (
-	"camera360.com/tv/pkg/runtime"
+	"camera360.com/tv/pkg/remotecontrol"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -20,10 +20,10 @@ var appLocker sync.Mutex
 type App interface {
 	GetId() string
 	GetPublicTopic() string
-	GetUsers() []*User
+	GetUsers() []*DevicePO
 	SendMessage(message interface{}) mqtt.Token
 	SendMessageToTopic(topic string, message interface{}) mqtt.Token
-	GetUserByMac(mac string) *User
+	GetUserByMac(mac string) *DevicePO
 	SendMessageToUser(mac string, message interface{}) (mqtt.Token, error)
 }
 
@@ -32,18 +32,18 @@ func Apps() map[string]*app {
 }
 
 func NewApp(clientId string, opts ...AppOption) *app {
-	appId := strings.Split(clientId, "-")[0]
-	if v, ok := apps[appId]; ok {
-		log.Println("app existing", appId)
+	appName := strings.Split(clientId, "-")[0]
+	if v, ok := apps[appName]; ok {
+		log.Println("app existing", appName)
 		return v
 	}
-	log.Println("new app:", appId)
+	log.Println("new app:", appName)
 	appLocker.Lock()
 	defer appLocker.Unlock()
-	if v, ok := apps[appId]; ok {
+	if v, ok := apps[appName]; ok {
 		return v
 	}
-	opts = append(opts, NewAppClientIdOption(appId))
+	opts = append(opts, NewAppNameOption(appName))
 	options := NewAppOptions(opts...)
 	if options.client == nil {
 		log.Println("init application failure,there is no mqtt client")
@@ -51,25 +51,25 @@ func NewApp(clientId string, opts ...AppOption) *app {
 	}
 	newApp := &app{
 		options: options,
-		Users:   make(map[string]*User),
+		Users:   make(map[string]*DevicePO),
 	}
 	newApp.init()
-	apps[appId] = newApp
+	apps[appName] = newApp
 	return newApp
 }
 
 type app struct {
-	Users   map[string]*User
+	Users   map[string]*DevicePO
 	locker  sync.Mutex
 	options *AppOptions
 }
 
 //发送消息到整个app
 func (s *app) GetPublicTopic() string {
-	return "/" + s.options.Id + "/public-topic"
+	return "/" + s.options.Name + "/public-topic"
 }
 
-func (s *app) GetUserByMac(mac string) *User {
+func (s *app) GetUserByMac(mac string) *DevicePO {
 	if u, ok := s.Users[mac]; ok {
 		return u
 	}
@@ -78,7 +78,7 @@ func (s *app) GetUserByMac(mac string) *User {
 
 //客户端心跳上报
 func (s *app) GetUserHeartBeatTopic() string {
-	return "/" + s.options.Id + "/heart-beat"
+	return "/" + s.options.Name + "/heart-beat"
 }
 
 //客户端接收的红外消息上报
@@ -96,7 +96,7 @@ func (s *app) SendMessageToTopic(topic string, message interface{}) mqtt.Token {
 }
 
 //客户端接收消息的topic
-func (s *app) GetUserTopic(u *User) string {
+func (s *app) GetUserTopic(u *DevicePO) string {
 	return "/" + s.options.Id + "/user/" + u.GetTopic()
 }
 
@@ -129,6 +129,13 @@ func (s *app) OnIRReceived(client mqtt.Client, message mqtt.Message) {
 	data := query.Get("data")
 	v := `{label:"%s",value:"%s"},`
 	fmt.Println(fmt.Sprintf(v, RandStringBytes(10), data))
+
+	btn, _ := remotecontrol.NewButton(context.Background())
+	po := btn.GetPO()
+	po.AppName = s.options.Name
+	po.Name = RandStringBytes(10)
+	po.IrCode = data
+	btn.Save()
 }
 
 func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
@@ -147,14 +154,15 @@ func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
 		user.Relay = query.Get("relay")
 		user.HeartbeatAt = now
 		fmt.Println("user.Relay", user.Relay)
-		saveUser(s.GetDataPath(), user)
+		saveUser(user)
 	} else {
 		fmt.Println("no user: ", mac)
-		user := &User{
+		user := &DevicePO{
+			AppName:     s.options.Name,
 			Mac:         mac,
 			WIFI:        query.Get("wifi"),
 			IP:          query.Get("ip"),
-			UserName:    query.Get("clientId"),
+			Name:        query.Get("clientId"),
 			Relay:       query.Get("relay"),
 			ConnectedAt: now,
 			HeartbeatAt: now,
@@ -174,7 +182,7 @@ func (s *app) sendUsersToWS() error {
 		return err
 	}
 	for c, _ := range hub.clients {
-		if c.appName == s.options.Id {
+		if c.appName == s.options.Name {
 			c.send <- js
 		}
 	}
@@ -184,32 +192,23 @@ func (s *app) sendUsersToWS() error {
 func (s *app) init() {
 	client := s.options.client
 	log.Println("subscribe to public ir received:", s.GetIRReceivedTopic())
-	log.Println("app boardcast tocpi:", s.GetPublicTopic())
+	log.Println("app boardcast topic:", s.GetPublicTopic())
 	client.Subscribe(s.GetIRReceivedTopic(), s.options.Qos, s.OnIRReceived)
 	//log.Println("subscribe to public heart beat topic:", s.GetUserHeartBeatTopic())
 	//client.Subscribe(s.GetUserHeartBeatTopic(), s.options.Qos, s.OnHeartBeat)
-	s.Users = loadUsers(s.GetDataPath())
+	s.Users = loadUsers(s.options.Id)
 }
 
-func (s *app) AddUser(user *User) App {
+func (s *app) AddUser(user *DevicePO) App {
 	s.locker.Lock()
 	defer s.locker.Unlock()
 	s.Users[user.Mac] = user
 	log.Println("user topic:", s.GetUserTopic(user))
-	//s.options.client.Subscribe(s.GetUserTopic(user), s.options.Qos, s.OnUserTopicDataReceived)
-	err := saveUser(s.GetDataPath(), user)
-	fmt.Println("save user error:", err)
 	return s
 }
 
-func (s *app) GetDataPath() string {
-	p := runtime.PATH + string(os.PathSeparator) + "data" + string(os.PathSeparator) + s.options.Id
-	os.Mkdir(p, os.ModePerm)
-	return p
-}
-
-func (s *app) GetUsers() []*User {
-	users := make([]*User, 0)
+func (s *app) GetUsers() []*DevicePO {
+	users := make([]*DevicePO, 0)
 	for _, v := range s.Users {
 		users = append(users, v)
 	}
