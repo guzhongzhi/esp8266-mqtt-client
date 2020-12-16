@@ -121,13 +121,14 @@ func (s *app) OnUserTopicDataReceived(client mqtt.Client, message mqtt.Message) 
 }
 
 func (s *app) OnIRReceived(client mqtt.Client, message mqtt.Message) {
-	fmt.Println("ir received", string(message.Payload()))
+	//fmt.Println("ir received", string(message.Payload()))
 	query, err := url.ParseQuery(string(message.Payload()))
 	if err != nil {
 		fmt.Println("parse query data error:", err)
 	}
 	data := query.Get("data")
-	fmt.Println("ir data:", data)
+	v := `{label:"%s",value:"%s"},`
+	fmt.Println(fmt.Sprintf(v, RandStringBytes(10), data))
 }
 
 func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
@@ -163,16 +164,21 @@ func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
 	s.sendUsersToWS()
 }
 
-func (s *app) sendUsersToWS() {
+func (s *app) sendUsersToWS() error {
 	msg := WebSocketClientMessage{
 		Operation: "users",
 		Data:      s.Users,
 	}
 	js, err := json.Marshal(msg)
-	if err == nil {
-		fmt.Println("js", string(js))
-		hub.broadcast <- js
+	if err != nil {
+		return err
 	}
+	for c, _ := range hub.clients {
+		if c.appName == s.options.Id {
+			c.send <- js
+		}
+	}
+	return nil
 }
 
 func (s *app) init() {

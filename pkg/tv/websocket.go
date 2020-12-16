@@ -72,8 +72,8 @@ var upgrader = websocket.Upgrader{
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	hub *Hub
-
+	hub     *Hub
+	appName string
 	// The websocket connection.
 	conn *websocket.Conn
 
@@ -166,12 +166,17 @@ func (c *Client) writePump() {
 
 // serveWs handles websocket requests from the peer.
 func WebSocketHandler(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	appName := r.URL.Query().Get("app")
+	if appName == "" {
+		log.Println("app name can not be null")
+		return
+	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{appName: appName, hub: hub, conn: conn, send: make(chan []byte, 256)}
 	client.hub.register <- client
 
 	go client.writePump()

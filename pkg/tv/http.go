@@ -49,11 +49,14 @@ func ServeHttp(listen string) {
 	dir := filepath.Dir(filepath.Dir(os.Args[0])) + "/static/"
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir(dir))))
 
-	r.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
+	r.HandleFunc("/{appId}/dashboard", func(w http.ResponseWriter, r *http.Request) {
+		request := NewAppRequest(r)
+
 		tmp := `<html><head>
     <meta charset="utf-8" />
     <title>Daemon</title> 
  <meta name="robots" content="index,follow" />
+<script language="javascript">window.APP_ID = "` + request.AppId + `"</script>
               <script src='https://libs.baidu.com/jquery/2.0.0/jquery.min.js'></script>
               <script src='/static/knockout.js'></script>
               <script src='/static/config.js'></script>
@@ -74,7 +77,7 @@ func ServeHttp(listen string) {
               <div id='content'></div>
 </body></html>
 `
-		writer.Write([]byte(tmp))
+		w.Write([]byte(tmp))
 	})
 
 	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
