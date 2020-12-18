@@ -14,7 +14,7 @@ type DevicePO struct {
 	WIFI        string             `json:"wifi" bson:"wifi"`
 	Relay       string             `json:"relay" bson:"relay"`
 	Mac         string             `json:"mac" bson:"mac"`
-	ModeId      string             `json:"modeId" bson:"modeId"` //遥控板
+	ModeId      []string           `json:"modeId" bson:"modeId"` //遥控板
 	ConnectedAt int64              `json:"connectedAt" bson:"connectedAt"`
 	HeartbeatAt int64              `json:"heartbeatAt" bson:"heartbeatAt"`
 }
@@ -68,9 +68,12 @@ func loadUsers(appName string) map[string]*DevicePO {
 func saveUser(user *DevicePO) error {
 	device, _ := NewDevice(context.Background())
 	device.LoadByMac(user.Mac)
+
 	if device.HasId() {
-		user.Id = device.GetPlainObject().Id
-		device.SetData(user)
+		device.GetPlainObject().WIFI = user.WIFI
+		device.GetPlainObject().Relay = user.Relay
+		device.GetPlainObject().IP = user.IP
+		device.GetPlainObject().HeartbeatAt = user.HeartbeatAt
 	} else {
 		device.SetData(user)
 	}

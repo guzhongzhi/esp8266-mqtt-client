@@ -18,7 +18,7 @@ var apps = make(map[string]*app)
 var appLocker sync.Mutex
 
 type App interface {
-	GetId() string
+	GetName() string
 	GetPublicTopic() string
 	GetUsers() []*DevicePO
 	SendMessage(message interface{}) mqtt.Token
@@ -49,6 +49,7 @@ func NewApp(clientId string, opts ...AppOption) *app {
 		log.Println("init application failure,there is no mqtt client")
 		options.client = client
 	}
+
 	newApp := &app{
 		options: options,
 		Users:   make(map[string]*DevicePO),
@@ -83,7 +84,7 @@ func (s *app) GetUserHeartBeatTopic() string {
 
 //客户端接收的红外消息上报
 func (s *app) GetIRReceivedTopic() string {
-	return "/" + s.options.Id + "/ir-received"
+	return "/" + s.options.Name + "/ir-received"
 }
 
 func (s *app) SendMessage(message interface{}) mqtt.Token {
@@ -97,7 +98,7 @@ func (s *app) SendMessageToTopic(topic string, message interface{}) mqtt.Token {
 
 //客户端接收消息的topic
 func (s *app) GetUserTopic(u *DevicePO) string {
-	return "/" + s.options.Id + "/user/" + u.GetTopic()
+	return "/" + s.options.Name + "/user/" + u.GetTopic()
 }
 
 //发送消息给指定客户端
@@ -153,12 +154,15 @@ func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
 		fmt.Println("user existing: ", mac)
 		user.Relay = query.Get("relay")
 		user.HeartbeatAt = now
+		user.IP = query.Get("ip")
+		user.WIFI = query.Get("wifi")
 		fmt.Println("user.Relay", user.Relay)
 		saveUser(user)
 	} else {
 		fmt.Println("no user: ", mac)
 		user := &DevicePO{
 			AppName:     s.options.Name,
+			ModeId:      []string{},
 			Mac:         mac,
 			WIFI:        query.Get("wifi"),
 			IP:          query.Get("ip"),
@@ -193,10 +197,12 @@ func (s *app) init() {
 	client := s.options.client
 	log.Println("subscribe to public ir received:", s.GetIRReceivedTopic())
 	log.Println("app boardcast topic:", s.GetPublicTopic())
+	fmt.Println("s.GetIRReceivedTopic()", s.GetIRReceivedTopic())
 	client.Subscribe(s.GetIRReceivedTopic(), s.options.Qos, s.OnIRReceived)
+	//client.Subscribe("ir-received", s.options.Qos, s.OnIRReceived)
 	//log.Println("subscribe to public heart beat topic:", s.GetUserHeartBeatTopic())
 	//client.Subscribe(s.GetUserHeartBeatTopic(), s.options.Qos, s.OnHeartBeat)
-	s.Users = loadUsers(s.options.Id)
+	s.Users = loadUsers(s.options.Name)
 }
 
 func (s *app) AddUser(user *DevicePO) App {
@@ -215,6 +221,6 @@ func (s *app) GetUsers() []*DevicePO {
 	return users
 }
 
-func (s *app) GetId() string {
-	return s.options.Id
+func (s *app) GetName() string {
+	return s.options.Name
 }

@@ -35,3 +35,18 @@ func (s *Mode) initialize(ctx context.Context) error {
 func (s *Mode) GetPO() *ModePO {
 	return s.Data.(*ModePO)
 }
+
+func (s *Mode) LoadByName(name string, appName string) error {
+	return s.LoadByCondition(mongo.M{
+		"appName": appName,
+		"name":    name,
+	})
+}
+
+func (s *Mode) GetButtons() []*ButtonPO {
+	btn, _ := NewButton(context.Background())
+	pager, _ := btn.GetCollection().Where(mongo.M{
+		"modeId": s.GetPO().Id.Hex(),
+	}).GetPager(1, 1000)
+	return pager.Items.([]*ButtonPO)
+}

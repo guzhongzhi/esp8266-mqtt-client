@@ -1,6 +1,8 @@
 package tv
 
 import (
+	"camera360.com/tv/pkg/remotecontrol"
+	"code.aliyun.com/MIG-server/micro-base/orm/mongo"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"time"
 )
@@ -86,11 +89,33 @@ func ServeHttp(listen string) {
 		WebSocketHandler(NewHub(), w, r)
 	})
 
+	//遥控板管理
+	r.PathPrefix("/{appId}/mode/").Subrouter().MatcherFunc(func(r *http.Request, match *mux.RouteMatch) bool {
+		result, _ := regexp.MatchString("/.*?/mode/.*", r.URL.Path)
+		return result
+	}).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		remotecontrol.NewControl().ServeHTTP(w, r)
+	})
+
 	r.HandleFunc("/apps", func(writer http.ResponseWriter, request *http.Request) {
 		j, err := json.Marshal(Apps())
 		fmt.Println("apps", err)
 		writer.Write(j)
 	})
+
+	r.HandleFunc("/{appId}/device/list", func(w http.ResponseWriter, r *http.Request) {
+		request := NewAppRequest(r)
+		device, err := NewDevice(r.Context())
+		pager, _ := device.GetCollection().Where(mongo.M{
+			"appName": request.AppId,
+		}).GetPager(1, 1000)
+		js, _ := json.Marshal(pager)
+		w.Write(js)
+		if err != nil {
+			log.Println("err", err)
+		}
+	})
+
 	r.HandleFunc("/{appId}/device/{mac}/save", func(w http.ResponseWriter, r *http.Request) {
 		request := NewAppRequest(r)
 		d, _ := NewDevice(context.Background())
@@ -103,6 +128,8 @@ func ServeHttp(listen string) {
 		body, _ := ioutil.ReadAll(r.Body)
 		json.Unmarshal(body, devicePO)
 		d.GetPlainObject().Name = devicePO.Name
+		log.Println("devicePO.ModeId", devicePO.ModeId)
+		d.GetPlainObject().ModeId = devicePO.ModeId
 		d.Save()
 		w.Write([]byte("OK"))
 	})
