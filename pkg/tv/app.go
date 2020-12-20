@@ -144,6 +144,8 @@ func (s *app) OnHeartBeat(client mqtt.Client, message mqtt.Message) {
 	if user, ok := s.Users[mac]; ok {
 		fmt.Println("user existing: ", mac)
 		user.Relay = query.Get("relay")
+		user.IP = query.Get("ip")
+		user.WIFI = query.Get("wifi")
 		user.HeartbeatAt = now
 		fmt.Println("user.Relay", user.Relay)
 		saveUser(s.GetDataPath(), user)
