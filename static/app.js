@@ -1,5 +1,4 @@
-const APP_ID = "guz";
-
+//const APP_ID = window.window.APP_ID ? window.APP_ID : "camera360";
 
 function WebSocketTest(model) {
     if ("WebSocket" in window) {
@@ -10,7 +9,7 @@ function WebSocketTest(model) {
     }
 
     // 打开一个 web socket
-    var ws = new WebSocket("ws://" + location.host + "/ws");
+    var ws = new WebSocket("ws://" + location.host + "/ws?app=" + APP_ID);
 
     ws.onopen = function () {
         ws.send(JSON.stringify({
@@ -81,7 +80,9 @@ jQuery(document).ready(function () {
         console.log(url)
         jQuery('#loading').show();
         jQuery.get(url, function (res) {
-            jQuery('#loading').hide();
+            setTimeout(() => {
+                jQuery('#loading').hide();
+            }, 500)
         })
     }
     let model = {
