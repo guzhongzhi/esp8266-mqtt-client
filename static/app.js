@@ -1,5 +1,3 @@
-//const APP_ID = window.window.APP_ID ? window.APP_ID : "camera360";
-
 function WebSocketTest(model) {
     if ("WebSocket" in window) {
 
@@ -73,9 +71,9 @@ jQuery(document).ready(function () {
     jQuery('#loading').hide();
 
     let sendCmd = function (cmd, mac = null) {
-        let url = "/" + APP_ID + "/message?cmd=" + cmd;
+        let url = "/app/" + APP_ID + "/message?cmd=" + cmd;
         if (mac) {
-            url = "/" + APP_ID + "/" + mac + "/message?cmd=" + cmd;
+            url = "/app/" + APP_ID + "/" + mac + "/message?cmd=" + cmd;
         }
         console.log(url)
         jQuery('#loading').show();
@@ -115,7 +113,7 @@ jQuery(document).ready(function () {
     ko.applyBindings(model, document.getElementById("content"));
 
     let getUsers = function () {
-        jQuery.get("/" + APP_ID + "/users", function (res) {
+        jQuery.get("/app/" + APP_ID + "/users", function (res) {
             model.users.splice(0, 1000);
             res.map((user) => {
                 model.users.push(user);
@@ -126,9 +124,9 @@ jQuery(document).ready(function () {
     //setInterval(getUsers, 10000);
     WebSocketTest(model);
     jQuery(".commands-item").click(function () {
-        let url = "/" + APP_ID + "/ir?code=" + jQuery(this).attr("data");
+        let url = "/app/" + APP_ID + "/send-ir?code=" + jQuery(this).attr("data");
         if (model.currentDevice != "") {
-            url = "/" + APP_ID + "/" + model.currentDevice + "/ir?code=" + jQuery(this).attr("data");
+            url = "/app/" + APP_ID + "/" + model.currentDevice + "/device-send-ir?code=" + jQuery(this).attr("data");
         }
         console.log(url)
         jQuery('#loading').show();

@@ -1,9 +1,9 @@
 package tv
 
 import (
+	"camera360.com/tv/pkg/tools"
 	"github.com/eclipse/paho.mqtt.golang"
 	"log"
-	"math/rand"
 	"net/url"
 	"time"
 )
@@ -26,18 +26,8 @@ func RegistryApp(mqttClient mqtt.Client, message mqtt.Message) {
 	app.OnHeartBeat(mqttClient, message)
 }
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-func RandStringBytes(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
-}
-
 func newServerId() string {
-	return "server-" + RandStringBytes(15)
+	return "server-" + tools.RandStringBytes(15)
 }
 
 func ServeMQTT() {

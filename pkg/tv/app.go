@@ -2,6 +2,7 @@ package tv
 
 import (
 	"camera360.com/tv/pkg/remotecontrol"
+	"camera360.com/tv/pkg/tools"
 	"context"
 	"encoding/json"
 	"errors"
@@ -47,7 +48,6 @@ func NewApp(clientId string, opts ...AppOption) *app {
 	options := NewAppOptions(opts...)
 	if options.client == nil {
 		log.Println("init application failure,there is no mqtt client")
-		options.client = client
 	}
 
 	newApp := &app{
@@ -129,13 +129,15 @@ func (s *app) OnIRReceived(client mqtt.Client, message mqtt.Message) {
 	}
 	data := query.Get("data")
 	v := `{label:"%s",value:"%s"},`
-	fmt.Println(fmt.Sprintf(v, RandStringBytes(10), data))
+	fmt.Println(fmt.Sprintf(v, tools.RandStringBytes(10), data))
 
 	btn, _ := remotecontrol.NewButton(context.Background())
 	po := btn.GetPO()
 	po.AppName = s.options.Name
-	po.Name = RandStringBytes(10)
+	po.Name = tools.RandStringBytes(10)
 	po.IrCode = data
+	po.CreatedAt = time.Now().Unix()
+	po.UpdatedAt = time.Now().Unix()
 	btn.Save()
 }
 

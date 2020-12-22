@@ -3,15 +3,53 @@ package controller
 import (
 	"code.aliyun.com/MIG-server/micro-base/orm/mongo"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 )
 
 type Controller struct {
-	response http.ResponseWriter
-	request  *http.Request
+	response    http.ResponseWriter
+	request     *http.Request
+	actionIndex int
+}
+
+func (c *Controller) ActionIndex(v int) {
+	c.actionIndex = v
+}
+
+func (c *Controller) Dispatch(ctl interface{}) {
+	r := c.request
+	path := strings.Split(r.URL.Path, "/")
+	if c.actionIndex == 0 {
+		c.actionIndex = 3
+	}
+	methodName := path[c.actionIndex]
+
+	temp := strings.Split(methodName, "-")
+	if len(temp) > 1 {
+		methodName = ""
+		for _, v := range temp {
+			methodName += strings.ToUpper(string(v[0])) + string(v[1:])
+		}
+	} else {
+		methodName = strings.ToUpper(string(methodName[0])) + string(methodName[1:])
+	}
+	log.Println(fmt.Sprintf("methodName: %v,%T", methodName, ctl))
+	st := reflect.ValueOf(ctl)
+	v := st.MethodByName(methodName)
+	res := v.Call([]reflect.Value{})
+	if len(res) == 0 {
+		return
+	}
+	v1 := res[0].Interface()
+	switch v1.(type) {
+	case error:
+		c.WriteStatusData(nil, http.StatusInternalServerError, fmt.Sprintf("%v", v1))
+	}
 }
 
 func (c *Controller) WriteStatusData(data interface{}, status int, message string) error {
@@ -25,10 +63,19 @@ func (c *Controller) WriteStatusData(data interface{}, status int, message strin
 }
 
 func (c *Controller) WriteJSON(data interface{}) error {
-	js, err := json.Marshal(data)
-	if err != nil {
-		log.Println("WriteJSON error:", err.Error())
-		return err
+	var js []byte
+	var err error
+	switch data.(type) {
+	case []byte:
+		js = data.([]byte)
+	case string:
+		js = []byte(data.(string))
+	default:
+		js, err = json.Marshal(data)
+		if err != nil {
+			log.Println("WriteJSON error:", err.Error())
+			return err
+		}
 	}
 	c.response.Write(js)
 	return nil
@@ -69,6 +116,11 @@ func (c *Controller) Boolean(name string) bool {
 		return true
 	}
 	return false
+}
+
+func (c *Controller) Int64(name string) int64 {
+	v := c.Int(name)
+	return int64(v)
 }
 
 func (c *Controller) Int(name string) int {

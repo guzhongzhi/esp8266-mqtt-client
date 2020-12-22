@@ -6,17 +6,15 @@ import (
 	"code.aliyun.com/MIG-server/micro-base/orm/mongo"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
-	"reflect"
-	"strings"
 	"time"
 )
 
 func NewControl() *Control {
 	ctl := &Control{}
+	ctl.ActionIndex(4)
 	return ctl
 }
 
@@ -30,30 +28,7 @@ func (c *Control) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.AppName = vars["appId"]
 	c.SetRequest(r)
 	c.SetResponse(w)
-	path := strings.Split(r.URL.Path, "/")
-	methodName := path[3]
-
-	temp := strings.Split(methodName, "-")
-	if len(temp) > 1 {
-		methodName = ""
-		for _, v := range temp {
-			methodName += strings.ToUpper(string(v[0])) + string(v[1:])
-		}
-	} else {
-		methodName = strings.ToUpper(string(methodName[0])) + string(methodName[1:])
-	}
-	log.Println("methodName", methodName)
-	st := reflect.ValueOf(c)
-	v := st.MethodByName(methodName)
-	res := v.Call([]reflect.Value{})
-	if len(res) == 0 {
-		return
-	}
-	v1 := res[0].Interface()
-	switch v1.(type) {
-	case error:
-		c.WriteStatusData(nil, http.StatusInternalServerError, fmt.Sprintf("%v", v1))
-	}
+	c.Dispatch(c)
 }
 
 func (c *Control) ButtonSave() error {

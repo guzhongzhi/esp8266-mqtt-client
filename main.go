@@ -1,6 +1,7 @@
 package main
 
 import (
+	"camera360.com/tv/pkg/server"
 	"camera360.com/tv/pkg/tv"
 	"code.aliyun.com/MIG-server/micro-base/config"
 	"code.aliyun.com/MIG-server/micro-base/microclient"
@@ -36,7 +37,7 @@ func main() {
 					tv.ServeMQTT()
 				}()
 				go func() {
-					tv.ServeHttp(listen)
+					server.ServeHttp(listen)
 				}()
 				wg.Wait()
 				return nil
