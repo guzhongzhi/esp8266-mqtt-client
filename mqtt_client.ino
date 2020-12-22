@@ -57,11 +57,12 @@ const uint16_t kIrLed = 4; // ESP8266 GPIO pin to use. Recommended: 4 (D2). 红�
 IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
 
 //MQTT
-String APP_ID = "guz";
+String APP_ID = "camera360";
 String clientId = "";
 unsigned long lastMsg = 0;
-//String MQTT_SERVER = "118.31.246.195";
-String MQTT_SERVER = "192.168.18.159";
+String MQTT_SERVER = "118.31.246.195";
+//String MQTT_SERVER = "192.168.18.159";
+
 
 //红外接收
 int isIrEnabled = 1; //是否启用红外输入
@@ -189,6 +190,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("");
   Serial.println("=============================");
 }
+PubSubClient client(MQTT_SERVER.c_str(),1883,callback,espClient);
 
 void jsonMessageReceived(char* data) {
   StaticJsonDocument<300> doc;
@@ -196,12 +198,13 @@ void jsonMessageReceived(char* data) {
   Serial.println("JSONDecode error");
   Serial.println(error.c_str());
   const char* cmd = doc["cmd"].as<char*>();
+  int executedAt = doc["executedAt"].as<int>();
   Serial.println("");
   Serial.print("cmd:");
   Serial.print(cmd);
   Serial.println("");
   if(cmd == "irs" || cmd == "irSend") {
-    const char* data = doc["cmd"].as<char*>();
+    const char* data = doc["data"].as<char*>();
     sendCode(data,"");
   }
   if(cmd == "setPinLow") {
@@ -212,9 +215,16 @@ void jsonMessageReceived(char* data) {
     int pin = doc["pin"].as<int>();
     digitalWrite(pin,HIGH);
   }
+  if(cmd == "on" || cmd == "high" || cmd == "upp") {
+    setHigh();
+  }
+  if(cmd == "off" || cmd == "off") {
+    setLow();
+  }
+  
+  String heartBeatTopic = "/" + APP_ID + "/heart-beat";
+  client.publish(heartBeatTopic.c_str(), jsonDeviceInfo(cmd,executedAt).c_str());
 }
-
-PubSubClient client(MQTT_SERVER.c_str(),1883,callback,espClient);
 
 void reconnect() {
   // Loop until we're reconnected
@@ -263,7 +273,7 @@ void heartBeat() {
   Serial.println(heartBeatTopic);
   
   if(JSONEnabled) {
-    client.publish(heartBeatTopic.c_str(), jsonDeviceInfo("").c_str());
+    client.publish(heartBeatTopic.c_str(), jsonDeviceInfo("",0).c_str());
   } else {
     Serial.println(deviceInfo().c_str());
     client.publish(heartBeatTopic.c_str(), deviceInfo().c_str());
@@ -276,7 +286,7 @@ void irReceived(String data) {
   }
   String commonInfo = "";
     if(JSONEnabled) {
-        commonInfo = jsonDeviceInfo(data);
+        commonInfo = jsonDeviceInfo(data,0);
     } else {
       commonInfo = deviceInfo();
       if(data.length() > 0) {
@@ -286,7 +296,9 @@ void irReceived(String data) {
     client.publish(("/" + APP_ID + "/ir-received").c_str(), commonInfo.c_str());
 }
 
-String jsonDeviceInfo(String data) {
+//data
+//executedAt: 上一次命令执行时间, 服务端下放的时间,回调服务端,表示执行成功
+String jsonDeviceInfo(String data, int executedAt) {
    doc["mac"] = WiFi.macAddress();
    doc["ip"]   = WiFi.localIP().toString();
    doc["jsonEnabled"] = JSONEnabled;
@@ -299,6 +311,7 @@ String jsonDeviceInfo(String data) {
    doc["irPin"] = kIrLed;
    doc["appName"] = APP_ID;
    doc["data"] = data;
+   doc["executedAt"] = executedAt;
    String output = "";
    serializeJson( doc,  output);
    Serial.println(output);
