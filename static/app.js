@@ -126,7 +126,7 @@ jQuery(document).ready(function () {
     jQuery(".commands-item").click(function () {
         let url = "/app/" + APP_ID + "/send-ir?code=" + jQuery(this).attr("data");
         if (model.currentDevice != "") {
-            url = "/app/" + APP_ID + "/" + model.currentDevice + "/device-send-ir?code=" + jQuery(this).attr("data");
+            url = "/app/" + APP_ID + "/device-send-ir?mac=" + model.currentDevice + "&code=" + jQuery(this).attr("data");
         }
         console.log(url)
         jQuery('#loading').show();
