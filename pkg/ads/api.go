@@ -117,15 +117,16 @@ func (c *Api) Index() error {
 			item.TextInfo = nil
 		}
 	}
-
-	if version == lastChanged {
-		c.Response().WriteHeader(http.StatusNotModified)
-		return nil
-	}
-
 	if err != nil {
 		return err
 	}
+
+	if version == lastChanged && lastChanged > 0 {
+		c.Response().WriteHeader(http.StatusNotModified)
+		c.Response().Write([]byte("OK"))
+		return nil
+	}
+
 	return c.WriteStatusData(mongo.M{
 		"version": lastChanged,
 		"items":   pager.Items,
