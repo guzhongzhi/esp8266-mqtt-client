@@ -13,4 +13,4 @@ require (
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
-replace code.aliyun.com/MIG-server/micro-base => ../micro/src/camera360.com/micro/micro-base
+//replace code.aliyun.com/MIG-server/micro-base => ../micro/src/camera360.com/micro/micro-base
