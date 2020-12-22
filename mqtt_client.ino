@@ -61,7 +61,7 @@ String APP_ID = "guz";
 String clientId = "";
 unsigned long lastMsg = 0;
 //String MQTT_SERVER = "118.31.246.195";
-String MQTT_SERVER = "192.168.18.60";
+String MQTT_SERVER = "192.168.18.159";
 
 //红外接收
 int isIrEnabled = 1; //是否启用红外输入
@@ -147,24 +147,22 @@ void debugWIFI() {
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
+  Serial.print(",length:");
   Serial.print(length);
   Serial.print("] ");
+  
+  char data[length + 1];
   for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
+    data[i] = (char) payload[i];
   }
+  data[length] = '\0';
   Serial.println("");
-  /*
-   *   char json[] =
-      "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
+  Serial.print(data);
 
-  // Deserialize the JSON document
-  DeserializationError error = deserializeJson(doc, json);
-
-  const char* sensor = doc["sensor"].as<char*>();
-  int ti = doc["time"].as<int>();
-  Serial.println(sensor);
-  Serial.println(ti);
-   */
+  if(JSONEnabled) {
+    jsonMessageReceived(data);
+    return;
+  }
 
   string cmd = "";
   string message = "";
@@ -190,6 +188,30 @@ void callback(char* topic, byte* payload, unsigned int length) {
   
   Serial.println("");
   Serial.println("=============================");
+}
+
+void jsonMessageReceived(char* data) {
+  StaticJsonDocument<300> doc;
+  DeserializationError error = deserializeJson(doc, data);
+  Serial.println("JSONDecode error");
+  Serial.println(error.c_str());
+  const char* cmd = doc["cmd"].as<char*>();
+  Serial.println("");
+  Serial.print("cmd:");
+  Serial.print(cmd);
+  Serial.println("");
+  if(cmd == "irs" || cmd == "irSend") {
+    const char* data = doc["cmd"].as<char*>();
+    sendCode(data,"");
+  }
+  if(cmd == "setPinLow") {
+    int pin = doc["pin"].as<int>();
+    digitalWrite(pin,LOW);
+  }
+  if(cmd == "setPinHigh") {
+    int pin = doc["pin"].as<int>();
+    digitalWrite(pin,HIGH);
+  }
 }
 
 PubSubClient client(MQTT_SERVER.c_str(),1883,callback,espClient);
