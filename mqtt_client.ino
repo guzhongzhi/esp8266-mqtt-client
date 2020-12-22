@@ -37,10 +37,15 @@
 #include <IRac.h>
 #include <IRtext.h>
 #include <IRutils.h>
+#include "ArduinoJson.h"
+
+StaticJsonDocument<300> doc;
 
 using namespace std;
 
 WiFiClient espClient;
+
+const bool JSONEnabled = true; //是否使用JSON通信
 
 //继电器及状态LED
 const uint16_t statePIN = 2;  //ESP8266 GPIO pin to use. Recommended: 2 . 开机状态
@@ -55,7 +60,8 @@ IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
 String APP_ID = "guz";
 String clientId = "";
 unsigned long lastMsg = 0;
-String MQTT_SERVER = "118.31.246.195";
+//String MQTT_SERVER = "118.31.246.195";
+String MQTT_SERVER = "192.168.18.60";
 
 //红外接收
 int isIrEnabled = 1; //是否启用红外输入
@@ -147,6 +153,18 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println("");
+  /*
+   *   char json[] =
+      "{\"sensor\":\"gps\",\"time\":1351824120,\"data\":[48.756080,2.302038]}";
+
+  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(doc, json);
+
+  const char* sensor = doc["sensor"].as<char*>();
+  int ti = doc["time"].as<int>();
+  Serial.println(sensor);
+  Serial.println(ti);
+   */
 
   string cmd = "";
   string message = "";
@@ -221,16 +239,48 @@ void heartBeat() {
   delay(500);
   String heartBeatTopic = "/" + APP_ID + "/heart-beat";
   Serial.println(heartBeatTopic);
-  Serial.println(deviceInfo().c_str());
-  client.publish(heartBeatTopic.c_str(), deviceInfo().c_str());
+  
+  if(JSONEnabled) {
+    client.publish(heartBeatTopic.c_str(), jsonDeviceInfo("").c_str());
+  } else {
+    Serial.println(deviceInfo().c_str());
+    client.publish(heartBeatTopic.c_str(), deviceInfo().c_str());
+  }
 }
 
-void sendHttpOut(String data) {
-    String commonInfo = deviceInfo();
-    if(data.length() > 0) {
-      commonInfo += ("&data=" + data);
+void irReceived(String data) {
+  if(!isIrEnabled) {
+      return;
+  }
+  String commonInfo = "";
+    if(JSONEnabled) {
+        commonInfo = jsonDeviceInfo(data);
+    } else {
+      commonInfo = deviceInfo();
+      if(data.length() > 0) {
+        commonInfo += ("&data=" + data);
+      }  
     }
     client.publish(("/" + APP_ID + "/ir-received").c_str(), commonInfo.c_str());
+}
+
+String jsonDeviceInfo(String data) {
+   doc["mac"] = WiFi.macAddress();
+   doc["ip"]   = WiFi.localIP().toString();
+   doc["jsonEnabled"] = JSONEnabled;
+   doc["wifi"] = WiFi.SSID();
+   doc["clientId"] = clientId;
+   doc["gw"] = WiFi.gatewayIP().toString();
+   doc["relay"] = relayPINState.c_str();
+   doc["relayPin"] = relayPIN;
+   doc["statePin"] = statePIN;
+   doc["irPin"] = kIrLed;
+   doc["appName"] = APP_ID;
+   doc["data"] = data;
+   String output = "";
+   serializeJson( doc,  output);
+   Serial.println(output);
+   return output;
 }
 
 String deviceInfo() {
@@ -363,7 +413,7 @@ void checkIrInput() {
     Serial.println("=======================");
     Serial.println(b);
     Serial.println("=======================");
-    sendHttpOut(b);
+    irReceived(b);
     Serial.println();    // Blank line between entries
     yield();             // Feed the WDT (again)
   }
