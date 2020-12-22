@@ -71,9 +71,9 @@ jQuery(document).ready(function () {
     jQuery('#loading').hide();
 
     let sendCmd = function (cmd, mac = null) {
-        let url = "/app/" + APP_ID + "/message?cmd=" + cmd;
+        let url = "/app/" + APP_ID + "/send-message?cmd=" + cmd;
         if (mac) {
-            url = "/app/" + APP_ID + "/" + mac + "/message?cmd=" + cmd;
+            url = "/app/" + APP_ID + "/device-send-message?mac=" + mac + "&cmd=" + cmd;
         }
         console.log(url)
         jQuery('#loading').show();
