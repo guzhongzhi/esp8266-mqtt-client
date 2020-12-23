@@ -1,6 +1,7 @@
 package tv
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 	"time"
@@ -46,6 +47,14 @@ type Command struct {
 	Cmd        string `json:"cmd"`
 	Data       string `json:"data"`
 	ExecutedAt int64  `json:"executedAt"`
+}
+
+func (s *Command) IsTurnOff() bool {
+	return s.Cmd == "off"
+}
+
+func (s *Command) ToString() string {
+	return fmt.Sprintf("%s,%s,%v", s.Cmd, s.ExecutedAt, s.Data)
 }
 
 func NewCmd(cmd, data string) *Command {

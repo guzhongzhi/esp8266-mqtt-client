@@ -30,6 +30,7 @@ func main() {
 				var wg sync.WaitGroup
 				wg.Add(2)
 				tv.ServeMQTT(appName)
+				go server.RunCronTab()
 				go tv.NewHub().Run()
 				go func() {
 					server.ServeHttp(listen)
@@ -82,7 +83,7 @@ func main() {
 		clientId := "com.camera360.srv.tvads"
 		//configUrl := "http://localhost:8100"
 		configPath := utils.GetBinPath("../configs")
-		loaderOptions := config.NewOptions(config.ConfigReloadDurationOption(time.Second*600),
+		loaderOptions := config.NewOptions(config.ConfigReloadDurationOption(time.Second*15),
 			config.NewCallBackOption(func(loader *config.Loader) {
 				for key, value := range loader.GetRemoteConfigData() {
 					if runtime.IsDebug() {

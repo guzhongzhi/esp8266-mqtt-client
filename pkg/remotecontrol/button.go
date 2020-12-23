@@ -17,6 +17,10 @@ type ButtonPO struct {
 	UpdatedAt int64              `json:"updatedAt" bson:"updatedAt"`
 }
 
+func (s *ButtonPO) IsPower() bool {
+	return s.Code == "power"
+}
+
 func (s *ButtonPO) ValidateMessages() map[string]string {
 	return nil
 }

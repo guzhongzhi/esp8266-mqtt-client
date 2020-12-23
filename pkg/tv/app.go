@@ -37,6 +37,7 @@ func NewApp(clientId string, opts ...AppOption) (*app) {
 		options.client = client
 		log.Println("init application failure,there is no mqtt client,use default mqtt client")
 	}
+	log.Println("options.Name ", options.Name)
 	if options.Name == "" {
 		appName := strings.Split(clientId, "-")[0]
 		if v, ok := apps[appName]; ok {
