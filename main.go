@@ -82,7 +82,7 @@ func main() {
 		clientId := "com.camera360.srv.tvads"
 		//configUrl := "http://localhost:8100"
 		configPath := utils.GetBinPath("../configs")
-		loaderOptions := config.NewOptions(config.ConfigReloadDurationOption(time.Second*15),
+		loaderOptions := config.NewOptions(config.ConfigReloadDurationOption(time.Second*60),
 			config.NewCallBackOption(func(loader *config.Loader) {
 				loader.GetRemoteConfigData()
 				/*for key, value := range loader.GetRemoteConfigData() {
