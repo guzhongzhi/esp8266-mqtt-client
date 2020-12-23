@@ -39,17 +39,18 @@
 #include <IRutils.h>
 #include "ArduinoJson.h"
 
-StaticJsonDocument<300> doc;
 
 using namespace std;
 
 WiFiClient espClient;
+//debug 时直接连2503
+int DEBUG = 0;
 
 const bool JSONEnabled = true; //是否使用JSON通信
 
 //继电器及状态LED
-const uint16_t statePIN = 2;  //ESP8266 GPIO pin to use. Recommended: 2 . 开机状态
-const uint16_t relayPIN = 0; //ESP8266 GPIO pin to use. Recommended: 0  继电器
+const uint16_t statePIN = 14;  //ESP8266 GPIO pin to use. Recommended: 14,D5 . 开机状态
+const uint16_t relayPIN = 5; //ESP8266 GPIO pin to use. Recommended:5, D1  继电器
 String relayPINState = "off";
 
 //红外发射
@@ -66,7 +67,7 @@ String MQTT_SERVER = "118.31.246.195";
 
 //红外接收
 int isIrEnabled = 1; //是否启用红外输入
-const uint16_t kRecvPin = 2;
+const uint16_t kRecvPin = 2;  //D4
 const uint16_t kCaptureBufferSize = 1024;
 #if DECODE_AC
 const uint8_t kTimeout = 50;
@@ -131,7 +132,7 @@ void smartConfig()
 
 void debugWIFI() {
     WiFi.begin("10012503", "gd10012503");
-    Serial.println("");
+    Serial.println("DEBUG");
     // Wait for connection
     while (WiFi.status() != WL_CONNECTED)
     {
@@ -197,33 +198,51 @@ void jsonMessageReceived(char* data) {
   DeserializationError error = deserializeJson(doc, data);
   Serial.println("JSONDecode error");
   Serial.println(error.c_str());
-  const char* cmd = doc["cmd"].as<char*>();
+  const char* cmdArray = doc["cmd"].as<char*>();
+
+  string cmd = "";
+  cmd.append(cmdArray);
+
+
   int executedAt = doc["executedAt"].as<int>();
   Serial.println("");
   Serial.print("cmd:");
-  Serial.print(cmd);
+  Serial.print(cmd.c_str());
   Serial.println("");
-  if(cmd == "irs" || cmd == "irSend") {
+  if( cmd == "irs" || cmd == "irSend") {
     const char* data = doc["data"].as<char*>();
+    Serial.println(data);
     sendCode(data,"");
   }
-  if(cmd == "setPinLow") {
-    int pin = doc["pin"].as<int>();
+  if( cmd == "setPinLow") {
+    int pin = doc["data"].as<int>();
+    Serial.println(cmd.c_str());
+    Serial.println(pin);
+    pinMode(pin, OUTPUT);
     digitalWrite(pin,LOW);
   }
-  if(cmd == "setPinHigh") {
-    int pin = doc["pin"].as<int>();
+  if( cmd == "setPinHigh") {
+    int pin = doc["data"].as<int>();
+    Serial.println(cmd.c_str());
+    Serial.println(pin);
+    pinMode(pin, OUTPUT);
     digitalWrite(pin,HIGH);
   }
   if(cmd == "on" || cmd == "high" || cmd == "upp") {
-    setHigh();
+    Serial.println("execute");
+    Serial.println(cmd.c_str());
+    Serial.println(relayPIN);
+    digitalWrite(relayPIN,HIGH);
   }
-  if(cmd == "off" || cmd == "off") {
-    setLow();
+  if(cmd == "off") {
+    Serial.println("execute");
+    Serial.println(cmd.c_str());
+    Serial.println(relayPIN);
+    digitalWrite(relayPIN,LOW);
   }
   
   String heartBeatTopic = "/" + APP_ID + "/heart-beat";
-  client.publish(heartBeatTopic.c_str(), jsonDeviceInfo(cmd,executedAt).c_str());
+  client.publish(heartBeatTopic.c_str(), jsonDeviceInfo(String(cmd.c_str()),executedAt,"feedBack").c_str());
 }
 
 void reconnect() {
@@ -273,7 +292,7 @@ void heartBeat() {
   Serial.println(heartBeatTopic);
   
   if(JSONEnabled) {
-    client.publish(heartBeatTopic.c_str(), jsonDeviceInfo("",0).c_str());
+    client.publish(heartBeatTopic.c_str(), jsonDeviceInfo("",0,"heartBeat").c_str());
   } else {
     Serial.println(deviceInfo().c_str());
     client.publish(heartBeatTopic.c_str(), deviceInfo().c_str());
@@ -286,19 +305,23 @@ void irReceived(String data) {
   }
   String commonInfo = "";
     if(JSONEnabled) {
-        commonInfo = jsonDeviceInfo(data,0);
+        commonInfo = jsonDeviceInfo(data,0,"irReceived");
     } else {
       commonInfo = deviceInfo();
       if(data.length() > 0) {
         commonInfo += ("&data=" + data);
       }  
     }
-    client.publish(("/" + APP_ID + "/ir-received").c_str(), commonInfo.c_str());
+    //String topic = "/" + APP_ID + "/ir-received";
+    String topic = "/" + APP_ID + "/heart-beat";
+    
+    client.publish(topic.c_str(), commonInfo.c_str());
 }
 
 //data
 //executedAt: 上一次命令执行时间, 服务端下放的时间,回调服务端,表示执行成功
-String jsonDeviceInfo(String data, int executedAt) {
+String jsonDeviceInfo(String data, int executedAt,String cmd) {
+   StaticJsonDocument<2048> doc;
    doc["mac"] = WiFi.macAddress();
    doc["ip"]   = WiFi.localIP().toString();
    doc["jsonEnabled"] = JSONEnabled;
@@ -311,10 +334,10 @@ String jsonDeviceInfo(String data, int executedAt) {
    doc["irPin"] = kIrLed;
    doc["appName"] = APP_ID;
    doc["data"] = data;
+   doc["cmd"] = cmd;
    doc["executedAt"] = executedAt;
    String output = "";
    serializeJson( doc,  output);
-   Serial.println(output);
    return output;
 }
 
@@ -342,7 +365,6 @@ void setup(void)
   pinMode(relayPIN, OUTPUT);
   pinMode(statePIN, OUTPUT);
   setLow();
-  int DEBUG = 0;
   if(DEBUG == 1) {
     debugWIFI();
   } else if (!autoConfig()){
@@ -363,7 +385,7 @@ void loop(void)
   }
   client.loop();
   long now = millis();
-  if ( lastMsg == 0 ||  (now - lastMsg) > 10000) {
+  if ( lastMsg == 0 ||  (now - lastMsg) > 30000) {
     lastMsg = now;
     heartBeat();
   }
@@ -444,14 +466,39 @@ void checkIrInput() {
     yield();  // Feed the WDT (again)
 #endif  // LEGACY_TIMING_INFO
     // Output the results as source code
-    String b = formatIRData(resultToSourceCode(&results));
-    Serial.println("=======================");
-    Serial.println(b);
-    Serial.println("=======================");
+    String a = resultToSourceCode(&results);
+    String b = formatIRData2(a);
+    Serial.println("===========aaaaaaaaaaaaaaaaaaaa============");
+    Serial.println(a);
+    Serial.println("============bbbbbbbbbbbbbbbbbbbbb===========");
     irReceived(b);
     Serial.println();    // Blank line between entries
     yield();             // Feed the WDT (again)
   }
+}
+
+String formatIRData2(String m) {
+    String n = "";
+    int isStarted = 0;
+    for(int i=0;i<m.length();i++) {
+       if(m[i] == '\n' || m[i]=='\r') {
+         n += "|||";  
+         isStarted = 0;
+         continue;
+       }
+        if (isStarted == 0 && m[i] == '=') {
+          isStarted = 1;
+        }
+        if(m[i] == '}') {
+          isStarted = 0;
+        }
+        if(isStarted == 1 && m[i] == ' ') {
+          continue;
+        }
+        n += String(m[i]);      
+    }   
+    Serial.println(n);
+    return n;
 }
 
 String formatIRData(String m) {
@@ -462,6 +509,7 @@ String formatIRData(String m) {
           continue;
        }
        if(m[i] == '\n' || m[i]=='\r') {
+           
            break;
        }
        if(m[i] == '{') {
