@@ -17,6 +17,7 @@ type DevicePO struct {
 	ModeId      []string           `json:"modeId" bson:"modeId"` //遥控板
 	ConnectedAt int64              `json:"connectedAt" bson:"connectedAt"`
 	HeartbeatAt int64              `json:"heartbeatAt" bson:"heartbeatAt"`
+	ExecutedAt  int64              `json:"executedAt" bson:"executedAt"` //最后执行的指令
 }
 
 func (s *DevicePO) ValidateMessages() map[string]string {

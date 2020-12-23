@@ -49,20 +49,18 @@ func (s *Api) Users() error {
 
 func (s *Api) SendIr() error {
 	code := s.String("code")
-	code = "irs|" + code
-	s.NewAppRequest().GetApp().SendMessage(code)
+	s.NewAppRequest().GetApp().SendMessage(NewIrSendCommand(code))
 	return nil
 }
 
 func (s *Api) DeviceSendIr() error {
-	code := s.String("code")
-	code = "irs|" + code
 	r := s.NewAppRequest()
 	app := r.GetApp()
+	code := s.String("code")
 	mac := s.String("mac")
 
 	if mac != "" {
-		app.SendMessageToUser(mac, code)
+		app.SendMessageToUser(mac, NewIrSendCommand(code))
 	} else {
 		fmt.Println("send message to application user failure, user do not existing")
 	}
@@ -75,22 +73,24 @@ func (s *Api) DeviceSendMessage() error {
 	cmd := s.String("cmd")
 	mac := s.String("mac")
 	if mac != "" {
-		app.SendMessageToUser(mac, cmd)
+		app.SendMessageToUser(mac, NewCmd(cmd, ""))
 	} else {
 		fmt.Println("invalid user mac:", mac)
 	}
 	s.WriteJSON("OK")
 	return nil
 }
+
 func (s *Api) SendMessage() error {
 	appRequest := s.NewAppRequest()
 	app := appRequest.GetApp()
 	topic := s.String("topic")
 	cmd := s.String("cmd")
+	data := s.String("data")
 	if topic != "" {
-		app.SendMessageToTopic(topic, cmd)
+		app.SendMessageToTopic(topic, NewCmd(cmd, data))
 	} else {
-		app.SendMessage(cmd)
+		app.SendMessage(NewCmd(cmd, data))
 	}
 	return s.WriteJSON("OK")
 }

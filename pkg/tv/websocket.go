@@ -119,6 +119,7 @@ func (c *Client) readPump() {
 			if appName == "" {
 				appName = fmt.Sprintf("%s", op.Data)
 			}
+			fmt.Println("appName", appName)
 			app := NewApp(appName)
 			app.sendUsersToWS()
 		}

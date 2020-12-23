@@ -17,30 +17,32 @@ import (
 
 var app = cli.NewApp()
 
-func initCtx(ctx *cli.Context) {
-	mq := ctx.String("mq")
-	tv.SetMQServer(mq)
-}
-
 func main() {
 	app.Commands = []*cli.Command{
 		&cli.Command{
 			Name:  "serve",
 			Usage: "start http server and subscribe to mqtt server",
 			Action: func(ctx *cli.Context) error {
-				initCtx(ctx)
+				mq := ctx.String("mq")
+				tv.SetMQServer(mq)
+				appName := ctx.String("appName")
 				listen := ctx.String("listen")
 				var wg sync.WaitGroup
 				wg.Add(2)
+				tv.ServeMQTT(appName)
 				go tv.NewHub().Run()
-				go func() {
-					tv.ServeMQTT()
-				}()
 				go func() {
 					server.ServeHttp(listen)
 				}()
 				wg.Wait()
 				return nil
+			},
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:  "appName",
+					Usage: "appName",
+					Value: "camera360",
+				},
 			},
 		},
 	}

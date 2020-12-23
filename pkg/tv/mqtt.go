@@ -2,9 +2,12 @@ package tv
 
 import (
 	"camera360.com/tv/pkg/tools"
+	"encoding/json"
+	"fmt"
 	"github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -16,21 +19,32 @@ func SetMQServer(v string) {
 }
 
 func RegistryApp(mqttClient mqtt.Client, message mqtt.Message) {
-	query, err := url.ParseQuery(string(message.Payload()))
-	if err != nil {
-		log.Println("init application failure:", err.Error())
-		return
+	clientId := ""
+	request := &HeartBeatRequest{}
+	body := strings.TrimSpace(string(message.Payload()))
+	fmt.Println("body", body)
+	if body[0] == '{' {
+		json.Unmarshal([]byte(body), request)
+		clientId = request.ClientId
+	} else {
+		query, err := url.ParseQuery(body)
+		if err != nil {
+			log.Println("init application failure:", err.Error())
+			return
+		}
+		clientId = query.Get("clientId")
 	}
-	clientId := query.Get("clientId")
-	app := NewApp(clientId, NewMQTTClientOption(mqttClient))
-	app.OnHeartBeat(mqttClient, message)
+
+	app := NewApp(clientId, NewMQTTClientOption(mqttClient), NewAppNameOption(request.AppName))
+	app.OnHeartBeat(mqttClient, request)
 }
 
 func newServerId() string {
 	return "server-" + tools.RandStringBytes(15)
 }
 
-func ServeMQTT() {
+func ServeMQTT(appName string) bool {
+	statChan := make(chan bool, 1)
 	clientId := newServerId()
 	opts := mqtt.NewClientOptions()
 	log.Println("mqServer:", mqServer)
@@ -46,7 +60,10 @@ func ServeMQTT() {
 	opts.Password, _ = temp.User.Password()
 	opts.OnConnect = func(client mqtt.Client) {
 		log.Println("heart-beat")
-		client.Subscribe("/guz/heart-beat", 2, RegistryApp)
+		t := client.Subscribe("/"+appName+"/heart-beat", 2, RegistryApp)
+		if t.Wait() && t.Error() == nil {
+			statChan <- true
+		}
 	}
 	opts.OnConnectionLost = func(i mqtt.Client, e error) {
 		log.Println("connect lost: ", e.Error())
@@ -63,4 +80,5 @@ func ServeMQTT() {
 		log.Fatal("mqtt connect: ", token.Error(), client.IsConnected())
 	}
 	log.Println("mqtt connected")
+	return <-statChan
 }
