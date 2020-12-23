@@ -84,11 +84,12 @@ func main() {
 		configPath := utils.GetBinPath("../configs")
 		loaderOptions := config.NewOptions(config.ConfigReloadDurationOption(time.Second*15),
 			config.NewCallBackOption(func(loader *config.Loader) {
-				for key, value := range loader.GetRemoteConfigData() {
+				loader.GetRemoteConfigData()
+				/*for key, value := range loader.GetRemoteConfigData() {
 					if runtime.IsDebug() {
 						//fmt.Println(key, value)
 					}
-				}
+				}*/
 			}))
 		_, err :=
 			config.InitLoader(env, configPath,
