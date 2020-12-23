@@ -57,7 +57,7 @@ func main() {
 		&cli.StringFlag{
 			Name:  "mq",
 			Usage: "mqtt server url, such as 1.0.0.0:1883",
-			Value: "tcp://mqtt:mqtt@118.31.246.195:1883",
+			Value: "",
 		},
 		&cli.BoolFlag{
 			Name:  "debug",
