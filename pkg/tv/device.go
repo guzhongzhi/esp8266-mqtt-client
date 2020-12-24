@@ -7,17 +7,18 @@ import (
 )
 
 type DevicePO struct {
-	Id          primitive.ObjectID `json:"id" bson:"_id"`
-	AppName     string             `json:"appName" bson:"appName"`
-	Name        string             `json:"name" bson:"name"` //设备名
-	IP          string             `json:"ip" bson:"ip"`
-	WIFI        string             `json:"wifi" bson:"wifi"`
-	Relay       string             `json:"relay" bson:"relay"`
-	Mac         string             `json:"mac" bson:"mac"`
-	ModeId      []string           `json:"modeId" bson:"modeId"` //遥控板
-	ConnectedAt int64              `json:"connectedAt" bson:"connectedAt"`
-	HeartbeatAt int64              `json:"heartbeatAt" bson:"heartbeatAt"`
-	ExecutedAt  int64              `json:"executedAt" bson:"executedAt"` //最后执行的指令
+	Id                       primitive.ObjectID `json:"id" bson:"_id"`
+	AppName                  string             `json:"appName" bson:"appName"`
+	Name                     string             `json:"name" bson:"name"` //设备名
+	IP                       string             `json:"ip" bson:"ip"`
+	WIFI                     string             `json:"wifi" bson:"wifi"`
+	Relay                    string             `json:"relay" bson:"relay"`
+	RelayTriggeredByLowLevel bool               `json:"relayTriggeredByLowLevel" bson:"relayTriggeredByLowLevel"`
+	Mac                      string             `json:"mac" bson:"mac"`
+	ModeId                   []string           `json:"modeId" bson:"modeId"` //遥控板
+	ConnectedAt              int64              `json:"connectedAt" bson:"connectedAt"`
+	HeartbeatAt              int64              `json:"heartbeatAt" bson:"heartbeatAt"`
+	ExecutedAt               int64              `json:"executedAt" bson:"executedAt"` //最后执行的指令
 }
 
 func (s *DevicePO) ValidateMessages() map[string]string {

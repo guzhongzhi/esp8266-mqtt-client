@@ -121,6 +121,7 @@ func (s *Api) DeviceSave() error {
 	}
 	d.GetPlainObject().Name = devicePO.Name
 	d.GetPlainObject().ModeId = devicePO.ModeId
+	d.GetPlainObject().RelayTriggeredByLowLevel = devicePO.RelayTriggeredByLowLevel
 	d.Save()
 	s.WriteJSON("OK")
 	return nil

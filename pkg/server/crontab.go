@@ -17,8 +17,10 @@ import (
 type CrontabConfig struct {
 	OnTime    int64  `json:"ontime"`    //定时开机时间, 时间戳只计算时间部分
 	OnDevice  string `json:"ondevice"`  //定时开机设备mac，多个都好分隔
+	OnCodes   string `json:"oncodes"`   //开机所执行的红外命令,多个逗号分隔
 	OffTime   int64  `json:"offtime"`   //定时关机时间
 	OffDevice string `json:"offdevice"` //定时关机设备
+	OffCodes  string `json:"offcodes"`  //关机所执行的红外命令, 多个逗号分隔
 }
 
 func RunCronTab() {
@@ -43,16 +45,17 @@ func runCrontab() error {
 
 	if config.OnTime > 0 {
 		logger.Default().Info("自动开")
-		runOnDevice(config.OnTime, config.OnDevice, tv.NewOnCommand())
+		runOnDevice(config.OnTime, config.OnDevice, config.OnCodes, "turnOn")
 	}
 	if config.OffTime > 0 {
 		logger.Default().Info("自动关")
-		runOnDevice(config.OffTime, config.OffDevice, tv.NewOffCommand())
+		runOnDevice(config.OffTime, config.OffDevice, config.OffCodes, "turnOff")
 	}
 	return nil
 }
 
-func runOnDevice(timestamp int64, device string, cmd *tv.Command) {
+func runOnDevice(timestamp int64, device string, irCodes string, operation string) {
+	irCodes = strings.TrimSpace(irCodes)
 	now := time.Now()
 	t := time.Unix(timestamp/1000, 0)
 	t.In(time.UTC)
@@ -88,9 +91,30 @@ func runOnDevice(timestamp int64, device string, cmd *tv.Command) {
 		modeIds := d.GetPlainObject().ModeId
 		mode, _ := remotecontrol.NewModel(context.Background())
 
+		var cmd *tv.Command
+		if operation == "turnOn" {
+			if d.GetPlainObject().RelayTriggeredByLowLevel {
+				cmd = tv.NewOffCommand()
+			} else {
+				cmd = tv.NewOnCommand()
+			}
+		} else {
+			if d.GetPlainObject().RelayTriggeredByLowLevel {
+				cmd = tv.NewOnCommand()
+			} else {
+				cmd = tv.NewOffCommand()
+			}
+		}
 		app.SendMessageToUser(mac, cmd)
 		//开电后延迟5秒再发送红外信号
-		time.Sleep(time.Second * 5)
+		if irCodes == "" {
+			continue
+		}
+		temp := strings.Split(irCodes, ",")
+		codes := make(map[string]string)
+		for _, code := range temp {
+			codes[strings.TrimSpace(code)] = strings.TrimSpace(code)
+		}
 
 		//如果有继电器,关电后不用再按遥控板
 		//@TODO
@@ -101,11 +125,13 @@ func runOnDevice(timestamp int64, device string, cmd *tv.Command) {
 		for _, modeId := range modeIds {
 			mode.Load(modeId)
 			for _, btn := range mode.GetButtons() {
-				if !btn.IsPower() {
+				if _, ok := codes[btn.Code]; !ok {
 					continue
 				}
+				time.Sleep(time.Second * 3)
 				logger.Default().Info("send ir command:", btn.Name, btn.Code, btn.IrCode)
 				app.SendMessageToUser(mac, tv.NewIrSendCommand(btn.IrCode))
+
 			}
 		}
 		logger.Default().Info("execute crontab", cmd.ToString())
