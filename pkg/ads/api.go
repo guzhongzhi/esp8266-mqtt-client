@@ -92,6 +92,7 @@ func (c *Api) Index() error {
 
 	where := mongo.M{
 		"status": "enabled",
+		/*
 		"$and": []interface{}{
 			mongo.M{"$or": []interface{}{
 				mongo.M{"startAt": 0},
@@ -101,7 +102,7 @@ func (c *Api) Index() error {
 				mongo.M{"endAt": 0},
 				mongo.M{"endAt": mongo.M{"$gt": now}},
 			}},
-		},
+		},*/
 	}
 	e, _ := json.Marshal(where)
 	fmt.Println("eeeeeee", string(e))
