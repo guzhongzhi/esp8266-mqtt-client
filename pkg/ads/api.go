@@ -56,6 +56,8 @@ type RespItem struct {
 	Title     string             `json:"title" bson:"title"`
 	Type      string             `json:"type" bson:"type"` //广告类型: text,album,video
 	TextInfo  *TextInfo          `json:"textInfo,omitempty" bson:"textInfo"`
+	StartAt   int64              `json:"startAt" bson:"startAt"` //开始时间
+	EndAt     int64              `json:"endAt" bson:"endAt"`     //结束时间
 	AlbumInfo *AlbumInfo         `json:"albumInfo,omitempty" bson:"albumInfo"`
 	VideoInfo *VideoInfo         `json:"videoInfo,omitempty" bson:"videoInfo"`
 	UpdatedAt int64              `json:"updatedAt" bson:"updatedAt"`
@@ -113,7 +115,14 @@ func (c *Api) Index() error {
 
 	ids := ""
 
+	data := make([]interface{}, 0)
 	for _, item := range pager.Items.([]*RespItem) {
+		if item.StartAt > 0 && item.StartAt < now {
+			continue
+		}
+		if item.EndAt > 0 && item.EndAt < now {
+			continue
+		}
 		ids += fmt.Sprintf("%s-%v", item.Id.Hex(), item.UpdatedAt)
 		switch item.Type {
 		case AdTypeAlbum:
@@ -130,6 +139,7 @@ func (c *Api) Index() error {
 			item.AlbumInfo = nil
 			item.TextInfo = nil
 		}
+		data = append(data, item)
 	}
 	if err != nil {
 		return err
@@ -147,6 +157,6 @@ func (c *Api) Index() error {
 
 	return c.WriteStatusData(mongo.M{
 		"version": v,
-		"items":   pager.Items,
+		"items":   data,
 	}, http.StatusOK, "OK")
 }
