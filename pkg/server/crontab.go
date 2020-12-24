@@ -94,9 +94,9 @@ func runOnDevice(timestamp int64, device string, cmd *tv.Command) {
 
 		//如果有继电器,关电后不用再按遥控板
 		//@TODO
-		if cmd.IsTurnOff() && d.GetPlainObject().Relay == "on" {
-			//continue
-		}
+		//if cmd.IsTurnOff() && d.GetPlainObject().Relay == "on" {
+		//continue
+		//}
 
 		for _, modeId := range modeIds {
 			mode.Load(modeId)

@@ -5,6 +5,7 @@ import (
 	"code.aliyun.com/MIG-server/micro-base/orm/mongo"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"hash/crc32"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 )
 
 var lastChanged int64
+var lastIds = ""
 
 func CssRBGAToAndroidARGB(v string) string {
 	reg := regexp.MustCompile("\\s+")
@@ -74,6 +76,10 @@ func (c *Api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c.Dispatch(c)
 }
 
+func Crc32IEEE(data []byte) uint32 {
+	return crc32.ChecksumIEEE(data)
+}
+
 func (c *Api) Index() error {
 	ad := NewAd()
 	version := c.Int64("version")
@@ -94,13 +100,17 @@ func (c *Api) Index() error {
 			}},
 		},
 	})
-	col.Sort(mongo.M{"sort": 1, "createdAt": -1})
+	sort := primitive.D{}
+	sort = append(sort, primitive.E{"sort", 1})
+	sort = append(sort, primitive.E{"createdAt", -1})
+	col.Sort(sort)
+	//mongo.M{"sort": 1, "createdAt": -1}
 	pager, err := col.GetPager(1, 1000)
 
+	ids := ""
+
 	for _, item := range pager.Items.([]*RespItem) {
-		if item.UpdatedAt > lastChanged {
-			lastChanged = item.UpdatedAt
-		}
+		ids += fmt.Sprintf("%s-%v", item.Id.Hex(), item.UpdatedAt)
 		switch item.Type {
 		case AdTypeAlbum:
 			item.TextInfo = nil
@@ -121,14 +131,18 @@ func (c *Api) Index() error {
 		return err
 	}
 
-	if version == lastChanged && lastChanged > 0 {
+	v := Crc32IEEE([]byte(ids))
+
+	if lastChanged == version && lastChanged > 0 {
 		c.Response().WriteHeader(http.StatusNotModified)
 		c.Response().Write([]byte("OK"))
 		return nil
 	}
+	lastChanged = int64(v)
+	lastIds = ids
 
 	return c.WriteStatusData(mongo.M{
-		"version": lastChanged,
+		"version": v,
 		"items":   pager.Items,
 	}, http.StatusOK, "OK")
 }

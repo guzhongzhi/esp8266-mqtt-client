@@ -62,6 +62,7 @@ func (c *Control) SetStatus() error {
 	ad := NewAd()
 	ad.Load(id)
 	ad.PlainObject().Status = status
+	ad.PlainObject().UpdatedAt = time.Now().Unix()
 	ad.Save()
 	return c.WriteStatusData(ad.GetData(), http.StatusOK, "OK")
 }
