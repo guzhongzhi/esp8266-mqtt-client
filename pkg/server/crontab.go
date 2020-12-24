@@ -78,6 +78,16 @@ func runOnDevice(timestamp int64, device string, irCodes string, operation strin
 		second -= 1
 	}
 
+	temp := strings.Split(irCodes, ",")
+	codes := make(map[string]string)
+	for _, code := range temp {
+		c := strings.TrimSpace(code)
+		if c == "" {
+			continue
+		}
+		codes[c] = c
+	}
+
 	macs := strings.Split(device, ",")
 	for _, mac := range macs {
 		logger.Default().Info("mac", mac)
@@ -109,11 +119,6 @@ func runOnDevice(timestamp int64, device string, irCodes string, operation strin
 		//开电后延迟5秒再发送红外信号
 		if irCodes == "" {
 			continue
-		}
-		temp := strings.Split(irCodes, ",")
-		codes := make(map[string]string)
-		for _, code := range temp {
-			codes[strings.TrimSpace(code)] = strings.TrimSpace(code)
 		}
 
 		//如果有继电器,关电后不用再按遥控板
