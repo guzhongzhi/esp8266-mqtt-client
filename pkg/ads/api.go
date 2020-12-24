@@ -105,7 +105,7 @@ func (c *Api) Index() error {
 		},*/
 	}
 	e, _ := json.Marshal(where)
-	fmt.Println("eeeeeee", string(e))
+	fmt.Println("eeeeeee", string(e), now)
 	col.Where(where)
 	sort := primitive.D{}
 	sort = append(sort, primitive.E{"sort", 1})
