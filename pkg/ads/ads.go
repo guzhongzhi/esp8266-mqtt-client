@@ -30,13 +30,15 @@ type TextInfo struct {
 	Config  *TextInfoConfig `json:"config" bson:"config"`
 }
 
+type AlbumInfoConfig struct {
+	DisplayMode  string `json:"displayMode" bson:"displayMode"`
+	DisplayOrder string `json:"displayOrder" bson:"displayOrder"`
+	Duration     int    `json:"duration" bson:"duration"`
+}
+
 type AlbumInfo struct {
-	Images []string `json:"images" bson:"images"`
-	Config struct {
-		DisplayMode  string `json:"displayMode" bson:"displayMode"`
-		DisplayOrder string `json:"displayOrder" bson:"displayOrder"`
-		Duration     int    `json:"duration" bson:"duration"`
-	} `json:"config" bson:"config"`
+	Images []string         `json:"images" bson:"images"`
+	Config *AlbumInfoConfig `json:"config" bson:"config"`
 }
 
 type VideoInfo struct {
