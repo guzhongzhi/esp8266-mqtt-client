@@ -132,14 +132,14 @@ func (c *Api) Index() error {
 	}
 
 	v := Crc32IEEE([]byte(ids))
+	lastChanged = int64(v)
+	lastIds = ids
 
 	if lastChanged == version && lastChanged > 0 {
 		c.Response().WriteHeader(http.StatusNotModified)
 		c.Response().Write([]byte("OK"))
 		return nil
 	}
-	lastChanged = int64(v)
-	lastIds = ids
 
 	return c.WriteStatusData(mongo.M{
 		"version": v,
