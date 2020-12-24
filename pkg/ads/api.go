@@ -139,7 +139,7 @@ func (c *Api) Index() error {
 	lastChanged = int64(v)
 	lastIds = ids
 
-	if lastChanged == version && lastChanged > 0 {
+	if false && lastChanged == version && lastChanged > 0 {
 		c.Response().WriteHeader(http.StatusNotModified)
 		c.Response().Write([]byte("OK"))
 		return nil
