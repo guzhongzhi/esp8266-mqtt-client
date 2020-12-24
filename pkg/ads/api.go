@@ -118,7 +118,7 @@ func (c *Api) Index() error {
 
 	data := make([]interface{}, 0)
 	for _, item := range pager.Items.([]*RespItem) {
-		if item.StartAt > 0 && item.StartAt < now {
+		if item.StartAt > 0 && item.StartAt > now {
 			continue
 		}
 		if item.EndAt > 0 && item.EndAt < now {
