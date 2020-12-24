@@ -3,6 +3,7 @@ package ads
 import (
 	"camera360.com/tv/pkg/controller"
 	"code.aliyun.com/MIG-server/micro-base/orm/mongo"
+	"encoding/json"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"hash/crc32"
@@ -87,7 +88,7 @@ func (c *Api) Index() error {
 	now := time.Now().Unix()
 	col := ad.GetCollection()
 
-	col.Where(mongo.M{
+	where := mongo.M{
 		"status": "enabled",
 		"$and": []interface{}{
 			mongo.M{"$or": []interface{}{
@@ -99,7 +100,10 @@ func (c *Api) Index() error {
 				mongo.M{"endAt": mongo.M{"$gt": now}},
 			}},
 		},
-	})
+	}
+	e, _ := json.Marshal(where)
+	fmt.Println("eeeeeee", string(e))
+	col.Where(where)
 	sort := primitive.D{}
 	sort = append(sort, primitive.E{"sort", 1})
 	sort = append(sort, primitive.E{"createdAt", -1})
