@@ -233,12 +233,14 @@ void jsonMessageReceived(char* data) {
     Serial.println(cmd.c_str());
     Serial.println(relayPIN);
     digitalWrite(relayPIN,HIGH);
+    relayPINState = "on";
   }
   if(cmd == "off") {
     Serial.println("execute");
     Serial.println(cmd.c_str());
     Serial.println(relayPIN);
     digitalWrite(relayPIN,LOW);
+    relayPINState = "off";
   }
   
   String heartBeatTopic = "/" + APP_ID + "/heart-beat";
