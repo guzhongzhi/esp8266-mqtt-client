@@ -42,3 +42,10 @@ func (s *Button) initialize(ctx context.Context) error {
 func (s *Button) GetPO() *ButtonPO {
 	return s.Data.(*ButtonPO)
 }
+
+func (s *Button) LoadByCodeAndModeId(code string, modeId string) error {
+	return s.LoadByCondition(mongo.M{
+		"modeId": modeId,
+		"code":   code,
+	})
+}

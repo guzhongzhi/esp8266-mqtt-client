@@ -50,3 +50,12 @@ func (s *Mode) GetButtons() []*ButtonPO {
 	}).GetPager(1, 1000)
 	return pager.Items.([]*ButtonPO)
 }
+
+func (s *Mode) GetButtonByCode(code string) *ButtonPO {
+	btn, _ := NewButton(context.Background())
+	btn.LoadByCodeAndModeId(code, s.GetPO().Id.Hex())
+	if btn.HasId() {
+		return btn.GetPO()
+	}
+	return nil
+}

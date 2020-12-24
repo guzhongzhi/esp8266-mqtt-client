@@ -87,6 +87,7 @@ func runOnDevice(timestamp int64, device string, irCodes string, operation strin
 		}
 		codes[c] = c
 	}
+	logger.Default().Info("ircode:", codes)
 
 	macs := strings.Split(device, ",")
 	for _, mac := range macs {
@@ -129,14 +130,18 @@ func runOnDevice(timestamp int64, device string, irCodes string, operation strin
 
 		for _, modeId := range modeIds {
 			mode.Load(modeId)
-			for _, btn := range mode.GetButtons() {
-				if _, ok := codes[btn.Code]; !ok {
+			for c, _ := range codes {
+				btn := mode.GetButtonByCode(c)
+				if btn == nil {
 					continue
 				}
+
 				time.Sleep(time.Second * 3)
+				if btn.IrCode == "" {
+					continue
+				}
 				logger.Default().Info("send ir command:", btn.Name, btn.Code, btn.IrCode)
 				app.SendMessageToUser(mac, tv.NewIrSendCommand(btn.IrCode))
-
 			}
 		}
 		logger.Default().Info("execute crontab", cmd.ToString())
