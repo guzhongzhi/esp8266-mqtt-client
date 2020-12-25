@@ -108,6 +108,17 @@ func (s *Api) DeviceList() error {
 	return nil
 }
 
+func (s *Api) DeviceDelete() error {
+	id := s.String("id")
+	d, _ := NewDevice(s.Request().Context())
+	d.Load(id)
+	if d.HasId() {
+		d.Delete()
+	}
+	s.WriteStatusData(true, http.StatusOK, "OK")
+	return nil
+}
+
 func (s *Api) DeviceSave() error {
 
 	devicePO := &DevicePO{}

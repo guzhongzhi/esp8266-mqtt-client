@@ -5,6 +5,7 @@ import (
 	"code.aliyun.com/MIG-server/micro-base/orm/mongo"
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -86,8 +87,25 @@ func (c *Control) Info() error {
 func (c *Control) List() error {
 	ad := NewAd()
 	collection := ad.GetCollection()
+	where := mongo.M{"appName": c.AppName}
+	title := c.String("title")
+	status := c.String("status")
+	if title != "" {
+		where["title"] = primitive.Regex{Pattern: title}
+	}
+	if status != "" {
+		where["status"] = status
+	}
 	collection.Sort(mongo.M{"createdAt": -1})
-	pager, err := collection.Where(mongo.M{"appName": c.AppName}).GetPager(1, 1000)
+	pageSize := c.Int("pageSize")
+	if pageSize == 0 {
+		pageSize = 10
+	}
+	page := c.Int("page")
+	if page == 0 {
+		page = 1
+	}
+	pager, err := collection.Where(where).GetPager(int32(page), int32(pageSize))
 	if err != nil {
 		return err
 	}
