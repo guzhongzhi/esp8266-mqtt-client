@@ -115,8 +115,6 @@ func (s *app) SendMessageToUser(mac string, message *Command) (mqtt.Token, error
 	topic := s.GetUserTopic(user)
 	token := s.SendMessageToTopic(topic, message)
 	token.Wait()
-
-	time.Sleep(time.Second)
 	fmt.Println("user.ExecutedAt", user.ExecutedAt)
 	return token, token.Error()
 }
