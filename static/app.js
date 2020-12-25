@@ -83,6 +83,22 @@ jQuery(document).ready(function () {
             }, 500)
         })
     }
+    let postJSON = function (url, data) {
+        return new Promise((resolve => {
+            jQuery.ajax({
+                url: url,
+                type: 'POST',
+                data: data,
+                dataType: 'json',
+                success: function (data, status, xhr) {
+                    resolve(data)
+                },
+                Error: function (xhr, error, exception) {
+                }
+            });
+        }))
+    }
+
     let model = {
         devices: devices,
         appId: APP_ID,
