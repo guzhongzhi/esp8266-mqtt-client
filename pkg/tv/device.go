@@ -70,7 +70,7 @@ func loadUsers(appName string) map[string]*DevicePO {
 	data := make(map[string]*DevicePO)
 	pager := collection.GetPager(1,1000)
 	for _,item := range pager.Items.([]*DevicePO) {
-		data = append(data, item)
+		data[item.Mac] = item
 	}
 	return data
 }
