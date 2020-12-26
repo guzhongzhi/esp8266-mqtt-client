@@ -45,6 +45,7 @@ func NewApp(clientId string, opts ...AppOption) (*app) {
 			return v
 		}
 		log.Println("new app:", appName)
+		options.Name = appName
 	}
 
 	appLocker.Lock()
