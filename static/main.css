@@ -32,6 +32,9 @@
     padding: 0px;
 }
 
+.commands button {
+    margin-right: 10px;
+}
 .commands,
 .commands li,
 .devices,
