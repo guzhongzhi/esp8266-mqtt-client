@@ -15,9 +15,9 @@ type DevicePO struct {
 	IP                       string             `json:"ip" bson:"ip"`
 	WIFI                     string             `json:"wifi" bson:"wifi"`
 	Relay                    string             `json:"relay" bson:"relay"`
-	RelayPin				 int     			`json:"RelayPin" bson:"RelayPin"`
-	CustomRelayPin 			 int 				`json:"CustomRelayPin" bson:"CustomRelayPin"`
-	HasCustomRelayPin		 bool 				`json:"HasCustomRelayPin" bson:"HasCustomRelayPin"`
+	RelayPin				 int     			`json:"relayPin" bson:"relayPin"`
+	CustomRelayPin 			 int 				`json:"customRelayPin" bson:"customRelayPin"`
+	HasCustomRelayPin		 bool 				`json:"hasCustomRelayPin" bson:"hasCustomRelayPin"`
 	RelayTriggeredByLowLevel bool               `json:"relayTriggeredByLowLevel" bson:"relayTriggeredByLowLevel"`
 	Mac                      string             `json:"mac" bson:"mac"`
 	ModeId                   []string           `json:"modeId" bson:"modeId"` //遥控板

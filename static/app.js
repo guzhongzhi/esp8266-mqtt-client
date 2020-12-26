@@ -50,12 +50,13 @@ jQuery(document).ready(function () {
     <ul class="users" data-bind="foreach:users">\
     <li style="padding:10px 0px;"><span><input data-bind="textInput: name" /></span> <span data-bind="text:wifi"></span> \
         <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:relay"></span> \
+        <input data-bind="textInput: relayPin" />\
         <span data-bind="text:$parent.timeformat(heartbeatAt)"></span>\
         <span><a href="javascript:void(0)" data-bind="text:$parent.operationText(relay), event: { click: $parent.operation}"></a></span>\
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.save}">保存</a></span>\
         </li>\
     </ul>\
-    <div style="margin-top: 10px;">操作</div>\
+    <div style="margin-top: 10px;">\
     <div style="padding:10px 0px;"><a href="javascript:void(0)" class="on-btn">电源开</a> <a href="javascript:void(0)" class="off-btn">电源关</a></div>\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
@@ -67,7 +68,7 @@ jQuery(document).ready(function () {
         </ul> \
         <div style="clear:both"></div>\
     </li> \
-</ul>'
+</ul></div>'
     jQuery('#content').append(content);
     jQuery('#loading').hide();
 
