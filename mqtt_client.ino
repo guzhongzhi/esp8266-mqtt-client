@@ -212,6 +212,7 @@ void jsonMessageReceived(char* data) {
   if(cmd == "setRelayPIN") {
     uint16_t newRelayPIN = doc["data"].as<uint16_t>();
     if (newRelayPIN != relayPIN) {
+      relayPIN = newRelayPIN;
       pinMode(relayPIN, OUTPUT);
       //重新设置了RelayPIN 后将其设置为低电平
       cmd = "off";      

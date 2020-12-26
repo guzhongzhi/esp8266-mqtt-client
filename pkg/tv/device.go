@@ -75,22 +75,3 @@ func loadUsers(appName string) map[string]*DevicePO {
 	return data
 }
 
-//@TODO
-func saveUser(user *DevicePO) error {
-	device, _ := NewDevice(context.Background())
-	device.LoadByMac(user.Mac)
-
-	if device.HasId() {
-		device.GetPlainObject().WIFI = user.WIFI
-		device.GetPlainObject().Relay = user.Relay
-		device.GetPlainObject().RelayPin = user.RelayPin
-		device.GetPlainObject().IP = user.IP
-		device.GetPlainObject().HeartbeatAt = user.HeartbeatAt
-		device.GetPlainObject().RelayPin = user.RelayPin
-		user.Id = device.GetPlainObject().Id
-	} else {
-		device.SetData(user)
-	}
-	device.Save()
-	return nil
-}

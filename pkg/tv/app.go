@@ -173,10 +173,34 @@ func (s *app) OnHeartBeat(client mqtt.Client, request *HeartBeatRequest) {
 			ConnectedAt: now,
 			HeartbeatAt: now,
 		}
-		saveUser(user)
+		s.saveUser(user)
 		s.AddUser(user)
 	}
 	s.sendUsersToWS()
+}
+
+func (s *app) saveUser(user *DevicePO) error {
+	device, _ := NewDevice(context.Background())
+	device.LoadByMac(user.Mac)
+
+	if device.HasId() {
+		device.GetPlainObject().WIFI = user.WIFI
+		device.GetPlainObject().Relay = user.Relay
+		device.GetPlainObject().RelayPin = user.RelayPin
+		device.GetPlainObject().IP = user.IP
+		device.GetPlainObject().HeartbeatAt = user.HeartbeatAt
+		device.GetPlainObject().RelayPin = user.RelayPin
+		user.Id = device.GetPlainObject().Id
+
+		if device.GetPlainObject().HasCustomRelayPin && device.GetPlainObject().CustomRelayPin != user.RelayPin{
+			app.SendMessageToUser(device.GetPlainObject().Mac,NewCmd("setRelayPIN",device.GetPlainObject().CustomRelayPin))
+		}
+	} else {
+		device.SetData(user)
+	}
+		device.Save()
+		return nil
+	}
 }
 
 func (s *app) sendUsersToWS() error {
