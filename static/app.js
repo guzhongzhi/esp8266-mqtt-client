@@ -72,7 +72,7 @@ jQuery(document).ready(function () {
         <div class="device-title"><b data-bind="text: name"></b></div> \
         <ul data-bind="foreach: commands" class="commands"> \
             <li> \
-            <a href="javascript:void(0)" class="commands-item" data-bind="attr: {data:value},text:label"> </a> \
+            <a href="javascript:void(0)" class="commands-item" data-bind="attr: {data:value},text:label, click: $parent.sendIR"> </a> \
             </li> \
         </ul> \
         <div style="clear:both"></div>\
@@ -138,6 +138,9 @@ jQuery(document).ready(function () {
         },
         operationText(v) {
             return v == "off" ? "打开" : "关闭";
+        },
+        sendIR() {
+            console.log(this);
         },
         timeformat: function (v) {
             let now = new Date(v * 1000);
