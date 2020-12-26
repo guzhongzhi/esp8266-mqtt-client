@@ -137,9 +137,13 @@ jQuery(document).ready(function () {
     let getUsers = function () {
         jQuery.get("/app/" + APP_ID + "/users", function (res) {
             model.users.splice(0, 1000);
-            res.map((user) => {
-                model.users.push(user);
-            })
+            if(res && Array.isArray(res)) {
+                res.map((user) => {
+                    model.users.push(user);
+                })
+            } else {
+                console.log(res);
+            }
         })
     }
     getUsers();
