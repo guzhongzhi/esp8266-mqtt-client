@@ -68,6 +68,10 @@ func loadUsers(appName string) map[string]*DevicePO {
 		"appName": appName,
 	})
 	data := make(map[string]*DevicePO)
+	pager := collection.GetPager(1,1000)
+	for _,item := range pager.Items.([]*DevicePO) {
+		data = append(data, item)
+	}
 	return data
 }
 
@@ -83,12 +87,6 @@ func saveUser(user *DevicePO) error {
 		device.GetPlainObject().IP = user.IP
 		device.GetPlainObject().HeartbeatAt = user.HeartbeatAt
 		device.GetPlainObject().RelayPin = user.RelayPin
-		if device.GetPlainObject().HasCustomRelayPin && device.GetPlainObject().RelayPin != device.GetPlainObject().CustomRelayPin {
-			NewApp(user.Name,NewAppNameOption(user.AppName)).SendMessageToUser(user.Mac,NewCmd("setRelayPIN",user.HasCustomRelayPin))
-			//{"cmd":"setRelayPIN","executedAt":19939838,data:0}
-		} else {
-			device.GetPlainObject().CustomRelayPin = user.RelayPin
-		}
 		user.Id = device.GetPlainObject().Id
 	} else {
 		device.SetData(user)

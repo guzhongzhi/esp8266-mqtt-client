@@ -133,17 +133,23 @@ func (s *Api) DeviceSave() error {
 	d.GetPlainObject().Name = devicePO.Name
 	d.GetPlainObject().ModeId = devicePO.ModeId
 	d.GetPlainObject().RelayTriggeredByLowLevel = devicePO.RelayTriggeredByLowLevel
-	d.GetPlainObject().HasCustomRelayPin = devicePO.HasCustomRelayPin
+	isRelayPinChanged := d.GetPlainObject().HasCustomRelayPin != devicePO.HasCustomRelayPin
+
 	d.GetPlainObject().CustomRelayPin = devicePO.CustomRelayPin
+	d.GetPlainObject().HasCustomRelayPin = devicePO.HasCustomRelayPin
 	d.Save()
 	app := NewApp(devicePO.Name,NewAppNameOption(devicePO.AppName))
 	app.AddUser( d.GetPlainObject())
-	if d.GetPlainObject().HasCustomRelayPin {
-		app.SendMessageToUser(d.GetPlainObject().Mac,NewCmd("setRelayPIN",d.GetPlainObject().CustomRelayPin))
-	} else {
-		//use default relay pin 5
-		app.SendMessageToUser(d.GetPlainObject().Mac,NewCmd("setRelayPIN",5))
+
+	if isRelayPinChanged {
+		if d.GetPlainObject().HasCustomRelayPin {
+			app.SendMessageToUser(d.GetPlainObject().Mac,NewCmd("setRelayPIN",d.GetPlainObject().CustomRelayPin))
+		} else {
+			//use default relay pin 5
+			app.SendMessageToUser(d.GetPlainObject().Mac,NewCmd("setRelayPIN",5))
+		}
 	}
+
 	s.WriteJSON("OK")
 	return nil
 }
