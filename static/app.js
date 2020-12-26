@@ -18,7 +18,6 @@ function WebSocketTest(model) {
 
     ws.onmessage = function (evt) {
         var data = evt.data;
-        console.log(data)
         try {
             data = JSON.parse(data);
             switch (data.operation) {
@@ -27,6 +26,7 @@ function WebSocketTest(model) {
                     Object.values(data.data).map((user) => {
                         let hasUser = false;
                         model.users().map((u2)=>{
+                            console.log(u2.mac,user.mac,user.relay);
                             if(u2.mac == user.mac) {
                                 hasUser = true;
                                 u2.relay = user.relay;
