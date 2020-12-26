@@ -167,6 +167,7 @@ func (s *app) OnHeartBeat(client mqtt.Client, request *HeartBeatRequest) {
 			IP:          request.IP,
 			Name:        request.ClientId,
 			Relay:       request.Relay,
+			RelayPin:    request.RelayPIN,
 			ExecutedAt:  request.ExecutedAt,
 			ConnectedAt: now,
 			HeartbeatAt: now,

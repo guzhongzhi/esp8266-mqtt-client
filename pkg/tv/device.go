@@ -79,6 +79,7 @@ func saveUser(user *DevicePO) error {
 	if device.HasId() {
 		device.GetPlainObject().WIFI = user.WIFI
 		device.GetPlainObject().Relay = user.Relay
+		device.GetPlainObject().RelayPin = user.RelayPin
 		device.GetPlainObject().IP = user.IP
 		device.GetPlainObject().HeartbeatAt = user.HeartbeatAt
 		device.GetPlainObject().RelayPin = user.RelayPin
