@@ -118,7 +118,7 @@ jQuery(document).ready(function () {
         devices: devices,
         appId: APP_ID,
         users: ko.observableArray([]),
-        currentDevice: "",
+        currentDevice: ko.observable(""),
         hasDevice:  ko.computed(function() {
             return this.currentDevice != "";
         }, this),
