@@ -127,7 +127,7 @@ jQuery(document).ready(function () {
             }
         },
         select(v) {
-            console.log(this,v);
+            console.log(this,v,$root);
             //this.$parent.currentDevice = this.mac;
         },
         save(v) {
