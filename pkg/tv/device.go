@@ -87,6 +87,7 @@ func saveUser(user *DevicePO) error {
 			NewApp(user.Name,NewAppNameOption(user.AppName)).SendMessageToUser(user.Mac,NewCmd("setRelayPIN",user.HasCustomRelayPin))
 			//{"cmd":"setRelayPIN","executedAt":19939838,data:0}
 		}
+		user.Id = device.GetPlainObject().Id
 	} else {
 		device.SetData(user)
 	}

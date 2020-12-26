@@ -172,8 +172,8 @@ func (s *app) OnHeartBeat(client mqtt.Client, request *HeartBeatRequest) {
 			ConnectedAt: now,
 			HeartbeatAt: now,
 		}
-		s.AddUser(user)
 		saveUser(user)
+		s.AddUser(user)
 	}
 	s.sendUsersToWS()
 }

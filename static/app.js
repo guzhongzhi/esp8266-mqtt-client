@@ -118,6 +118,9 @@ jQuery(document).ready(function () {
         save(v) {
             console.log(v);
             console.log(this);
+            postJSON("/app/guz/device-save",this).then(res=>{
+                console.log(res);
+            })
         },
         operationText(v) {
             return v == "off" ? "打开" : "关闭";
