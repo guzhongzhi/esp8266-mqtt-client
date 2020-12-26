@@ -198,9 +198,8 @@ func (s *app) saveUser(user *DevicePO) error {
 	} else {
 		device.SetData(user)
 	}
-		device.Save()
-		return nil
-	}
+	device.Save()
+	return nil
 }
 
 func (s *app) sendUsersToWS() error {
