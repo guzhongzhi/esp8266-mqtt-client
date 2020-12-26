@@ -26,7 +26,6 @@ function WebSocketTest(model) {
                     Object.values(data.data).map((user) => {
                         let hasUser = false;
                         model.users().map((u2)=>{
-                            console.log(u2.mac,user.mac,user.relay);
                             if(u2.mac == user.mac) {
                                 hasUser = true;
                                 model.users.replace(u2,user);
