@@ -157,7 +157,7 @@ func (s *app) OnHeartBeat(client mqtt.Client, request *HeartBeatRequest) {
 			user.ExecutedAt = request.ExecutedAt
 		}
 		fmt.Println("user.Relay", user.Relay)
-		saveUser(user)
+		s.saveUser(user)
 	} else {
 		fmt.Println("no user: ", request.Mac)
 		user := &DevicePO{
@@ -193,7 +193,7 @@ func (s *app) saveUser(user *DevicePO) error {
 		user.Id = device.GetPlainObject().Id
 
 		if device.GetPlainObject().HasCustomRelayPin && device.GetPlainObject().CustomRelayPin != user.RelayPin{
-			app.SendMessageToUser(device.GetPlainObject().Mac,NewCmd("setRelayPIN",device.GetPlainObject().CustomRelayPin))
+			s.SendMessageToUser(device.GetPlainObject().Mac,NewCmd("setRelayPIN",device.GetPlainObject().CustomRelayPin))
 		}
 	} else {
 		device.SetData(user)
