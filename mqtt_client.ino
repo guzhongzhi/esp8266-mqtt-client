@@ -346,6 +346,7 @@ String jsonDeviceInfo(String data, int executedAt,String cmd) {
    doc["executedAt"] = executedAt;
    String output = "";
    serializeJson( doc,  output);
+   Serial.println(output);
    return output;
 }
 
