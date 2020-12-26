@@ -90,7 +90,8 @@ jQuery(document).ready(function () {
             jQuery.ajax({
                 url: url,
                 type: 'POST',
-                data: data,
+                data: typeof(data) == "string" ? data : JSON.stringify(data),
+                contentType: 'application/json',
                 dataType: 'json',
                 success: function (data, status, xhr) {
                     resolve(data)
