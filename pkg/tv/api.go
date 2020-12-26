@@ -136,6 +136,7 @@ func (s *Api) DeviceSave() error {
 	d.GetPlainObject().HasCustomRelayPin = devicePO.HasCustomRelayPin
 	d.GetPlainObject().CustomRelayPin = devicePO.CustomRelayPin
 	d.Save()
+	NewApp(devicePO.Name,NewAppNameOption(devicePO.AppName)).AddUser( d.GetPlainObject())
 	s.WriteJSON("OK")
 	return nil
 }
