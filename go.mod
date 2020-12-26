@@ -3,10 +3,14 @@ module camera360.com/tv
 go 1.13
 
 require (
-	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	code.aliyun.com/MIG-server/micro-base v0.0.0-20201214085713-4e22e600232f
 	github.com/eclipse/paho.mqtt.golang v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/urfave/cli/v2 v2.3.0
-	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
+	go.mongodb.org/mongo-driver v1.4.2
 )
+
+replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
+
+//replace code.aliyun.com/MIG-server/micro-base => ../micro/src/camera360.com/micro/micro-base

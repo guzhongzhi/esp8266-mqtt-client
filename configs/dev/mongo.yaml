@@ -1,0 +1,3 @@
+tvads:
+  dsn: "mongodb://localhost:27017/tvads"
+  db: "tvads"

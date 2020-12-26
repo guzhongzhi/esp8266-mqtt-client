@@ -1,5 +1,3 @@
-//const APP_ID = window.window.APP_ID ? window.APP_ID : "camera360";
-
 function WebSocketTest(model) {
     if ("WebSocket" in window) {
 
@@ -50,9 +48,9 @@ jQuery(document).ready(function () {
     var content = '<div>当前应用: <span data-bind="text:appId"></span></div>\
     <div>当前客户端列表:</div> \
     <ul class="users" data-bind="foreach:users">\
-    <li><span data-bind="text:username"></span> <span data-bind="text:wifi"></span> \
+    <li><span data-bind="text:name"></span> <span data-bind="text:wifi"></span> \
         <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:relay"></span> \
-        <span data-bind="text:$parent.timeformat(heartbeat_at)"></span>\
+        <span data-bind="text:$parent.timeformat(heartbeatAt)"></span>\
         <span><a href="javascript:void(0)" data-bind="text:$parent.operationText(relay), event: { click: $parent.operation}"></a></span>\
         </li>\
     </ul>\
@@ -73,9 +71,9 @@ jQuery(document).ready(function () {
     jQuery('#loading').hide();
 
     let sendCmd = function (cmd, mac = null) {
-        let url = "/" + APP_ID + "/message?cmd=" + cmd;
+        let url = "/app/" + APP_ID + "/send-message?cmd=" + cmd;
         if (mac) {
-            url = "/" + APP_ID + "/" + mac + "/message?cmd=" + cmd;
+            url = "/app/" + APP_ID + "/device-send-message?mac=" + mac + "&cmd=" + cmd;
         }
         console.log(url)
         jQuery('#loading').show();
@@ -85,6 +83,22 @@ jQuery(document).ready(function () {
             }, 500)
         })
     }
+    let postJSON = function (url, data) {
+        return new Promise((resolve => {
+            jQuery.ajax({
+                url: url,
+                type: 'POST',
+                data: data,
+                dataType: 'json',
+                success: function (data, status, xhr) {
+                    resolve(data)
+                },
+                Error: function (xhr, error, exception) {
+                }
+            });
+        }))
+    }
+
     let model = {
         devices: devices,
         appId: APP_ID,
@@ -115,20 +129,20 @@ jQuery(document).ready(function () {
     ko.applyBindings(model, document.getElementById("content"));
 
     let getUsers = function () {
-        jQuery.get("/" + APP_ID + "/users", function (res) {
+        jQuery.get("/app/" + APP_ID + "/users", function (res) {
             model.users.splice(0, 1000);
             res.map((user) => {
                 model.users.push(user);
             })
         })
     }
-    //getUsers();
+    getUsers();
     //setInterval(getUsers, 10000);
     WebSocketTest(model);
     jQuery(".commands-item").click(function () {
-        let url = "/" + APP_ID + "/ir?code=" + jQuery(this).attr("data");
+        let url = "/app/" + APP_ID + "/send-ir?code=" + jQuery(this).attr("data");
         if (model.currentDevice != "") {
-            url = "/" + APP_ID + "/" + model.currentDevice + "/ir?code=" + jQuery(this).attr("data");
+            url = "/app/" + APP_ID + "/device-send-ir?mac=" + model.currentDevice + "&code=" + jQuery(this).attr("data");
         }
         console.log(url)
         jQuery('#loading').show();
