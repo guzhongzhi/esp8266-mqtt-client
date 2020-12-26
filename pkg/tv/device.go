@@ -6,6 +6,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+type RelayPin *int
+
 type DevicePO struct {
 	Id                       primitive.ObjectID `json:"id" bson:"_id"`
 	AppName                  string             `json:"appName" bson:"appName"`
@@ -13,6 +15,9 @@ type DevicePO struct {
 	IP                       string             `json:"ip" bson:"ip"`
 	WIFI                     string             `json:"wifi" bson:"wifi"`
 	Relay                    string             `json:"relay" bson:"relay"`
+	RelayPin				 int     			`json:"RelayPin" bson:"RelayPin"`
+	CustomRelayPin 			 int 				`json:"CustomRelayPin" bson:"CustomRelayPin"`
+	HasCustomRelayPin		 bool 				`json:"HasCustomRelayPin" bson:"HasCustomRelayPin"`
 	RelayTriggeredByLowLevel bool               `json:"relayTriggeredByLowLevel" bson:"relayTriggeredByLowLevel"`
 	Mac                      string             `json:"mac" bson:"mac"`
 	ModeId                   []string           `json:"modeId" bson:"modeId"` //遥控板
@@ -76,6 +81,11 @@ func saveUser(user *DevicePO) error {
 		device.GetPlainObject().Relay = user.Relay
 		device.GetPlainObject().IP = user.IP
 		device.GetPlainObject().HeartbeatAt = user.HeartbeatAt
+		device.GetPlainObject().RelayPin = user.RelayPin
+		if device.GetPlainObject().HasCustomRelayPin && device.GetPlainObject().RelayPin != device.GetPlainObject().CustomRelayPin {
+			NewApp(user.Name,NewAppNameOption(user.AppName)).SendMessageToUser(user.Mac,NewCmd("setRelayPIN",user.HasCustomRelayPin))
+			//{"cmd":"setRelayPIN","executedAt":19939838,data:0}
+		}
 	} else {
 		device.SetData(user)
 	}

@@ -151,6 +151,7 @@ func (s *app) OnHeartBeat(client mqtt.Client, request *HeartBeatRequest) {
 		user.HeartbeatAt = now
 		user.IP = request.IP
 		user.WIFI = request.WIFI
+		user.RelayPin = request.RelayPIN
 		if request.ExecutedAt > 0 {
 			user.ExecutedAt = request.ExecutedAt
 		}

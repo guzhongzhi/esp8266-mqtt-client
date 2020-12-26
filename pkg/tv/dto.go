@@ -44,9 +44,9 @@ type HeartBeatRequest struct {
 }
 
 type Command struct {
-	Cmd        string `json:"cmd"`
-	Data       string `json:"data"`
-	ExecutedAt int64  `json:"executedAt"`
+	Cmd        string 		`json:"cmd"`
+	Data       interface{}  `json:"data"`
+	ExecutedAt int64  		`json:"executedAt"`
 }
 
 func (s *Command) IsTurnOff() bool {
@@ -54,10 +54,10 @@ func (s *Command) IsTurnOff() bool {
 }
 
 func (s *Command) ToString() string {
-	return fmt.Sprintf("%s,%s,%v", s.Cmd, s.ExecutedAt, s.Data)
+	return fmt.Sprintf("%s,%v,%v", s.Cmd, s.ExecutedAt, s.Data)
 }
 
-func NewCmd(cmd, data string) *Command {
+func NewCmd(cmd string, data interface{}) *Command {
 	c := &Command{
 		Cmd:        cmd,
 		Data:       data,
