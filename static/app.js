@@ -71,7 +71,7 @@ jQuery(document).ready(function () {
     <li class="device"> \
         <div class="device-title"><b data-bind="text: name"></b></div> \
         <span data-bind="foreach: commands" class="commands"> \
-            <button  data-bind="attr: {data:value},text:label, click: $parent.$parent.sendIR"> </button> \
+            <button  data-bind="attr: {data:value},text:label, click: sendIR"> </button> \
         </span> \
         <div style="clear:both"></div>\
     </li> \
