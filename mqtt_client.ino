@@ -210,10 +210,12 @@ void jsonMessageReceived(char* data) {
   Serial.print(cmd.c_str());
   Serial.println("");
   if(cmd == "setRelayPIN") {
-    relayPIN = doc["data"].as<uint16_t>();
-    pinMode(relayPIN, OUTPUT);
-    //重新设置了RelayPIN 后将其设置为低电平
-    cmd = "off";
+    uint16_t newRelayPIN = doc["data"].as<uint16_t>();
+    if (newRelayPIN != relayPIN) {
+      pinMode(relayPIN, OUTPUT);
+      //重新设置了RelayPIN 后将其设置为低电平
+      cmd = "off";      
+    }
   }
   if( cmd == "irs" || cmd == "irSend") {
     const char* data = doc["data"].as<char*>();

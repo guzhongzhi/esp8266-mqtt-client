@@ -23,6 +23,7 @@ function WebSocketTest(model) {
             data = JSON.parse(data);
             switch (data.operation) {
                 case "users":
+                    break;
                     console.log(data.data);
                     model.users.splice(0, 1000);
                     Object.values(data.data).map((user) => {
