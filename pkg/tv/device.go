@@ -68,7 +68,7 @@ func loadUsers(appName string) map[string]*DevicePO {
 		"appName": appName,
 	})
 	data := make(map[string]*DevicePO)
-	pager := collection.GetPager(1,1000)
+	pager,_ := collection.GetPager(1,1000)
 	for _,item := range pager.Items.([]*DevicePO) {
 		data[item.Mac] = item
 	}
