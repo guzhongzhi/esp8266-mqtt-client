@@ -65,10 +65,8 @@ jQuery(document).ready(function () {
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.select}">选择</a></span>\
         </li>\
     </ul>\
-    <div data-bind="text:hasDevice"></div>\
     <div data-bind="text:currentDevice"></div>\
     <div style="margin-top: 10px;" data-bind="if: currentDevice">\
-    <div style="padding:10px 0px;"><a href="javascript:void(0)" class="on-btn">电源开</a> <a href="javascript:void(0)" class="off-btn">电源关</a></div>\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
         <div class="device-title"><b data-bind="text: name"></b></div> \
@@ -118,9 +116,6 @@ jQuery(document).ready(function () {
         appId: APP_ID,
         users: ko.observableArray([]),
         currentDevice: ko.observable(""),
-        hasDevice:  ko.computed(function() {
-            return this.currentDevice != "";
-        }, this),
         operation: function (data) {
             let mac = data.mac;
             let relay = data.relay;
@@ -171,7 +166,7 @@ jQuery(document).ready(function () {
     getUsers();
     //setInterval(getUsers, 10000);
     WebSocketTest(model);
-    jQuery(".commands-item").click(function () {
+    jQuery(".commands-item").on("click",function () {
         let url = "/app/" + APP_ID + "/send-ir?code=" + jQuery(this).attr("data");
         if (model.currentDevice != "") {
             url = "/app/" + APP_ID + "/device-send-ir?mac=" + model.currentDevice + "&code=" + jQuery(this).attr("data");
