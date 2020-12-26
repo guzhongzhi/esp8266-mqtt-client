@@ -136,7 +136,14 @@ func (s *Api) DeviceSave() error {
 	d.GetPlainObject().HasCustomRelayPin = devicePO.HasCustomRelayPin
 	d.GetPlainObject().CustomRelayPin = devicePO.CustomRelayPin
 	d.Save()
-	NewApp(devicePO.Name,NewAppNameOption(devicePO.AppName)).AddUser( d.GetPlainObject())
+	app := NewApp(devicePO.Name,NewAppNameOption(devicePO.AppName))
+	app.AddUser( d.GetPlainObject())
+	if d.GetPlainObject().HasCustomRelayPin {
+		app.SendMessageToUser(d.GetPlainObject().Mac,NewCmd("setRelayPIN",d.GetPlainObject().CustomRelayPin))
+	} else {
+		//use default relay pin 5
+		app.SendMessageToUser(d.GetPlainObject().Mac,NewCmd("setRelayPIN",5)
+	}
 	s.WriteJSON("OK")
 	return nil
 }
