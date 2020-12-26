@@ -138,7 +138,17 @@ jQuery(document).ready(function () {
             return v == "off" ? "打开" : "关闭";
         },
         sendIR() {
-            console.log(this);
+            let url = "/app/" + APP_ID + "/send-ir?code=" + this.value;
+            if (model.currentDevice != "") {
+                url = "/app/" + APP_ID + "/device-send-ir?mac=" + model.currentDevice + "&code=" + this.value;
+            }
+            console.log(url)
+            jQuery('#loading').show();
+            jQuery.get(url, function (res) {
+                setTimeout(function () {
+                    jQuery('#loading').hide();
+                }, 500)
+            })
         },
         timeformat: function (v) {
             let now = new Date(v * 1000);
@@ -169,17 +179,7 @@ jQuery(document).ready(function () {
     WebSocketTest(model);
     /*
     jQuery(".commands-item").on("click",function () {
-        let url = "/app/" + APP_ID + "/send-ir?code=" + jQuery(this).attr("data");
-        if (model.currentDevice != "") {
-            url = "/app/" + APP_ID + "/device-send-ir?mac=" + model.currentDevice + "&code=" + jQuery(this).attr("data");
-        }
-        console.log(url)
-        jQuery('#loading').show();
-        jQuery.get(url, function (res) {
-            setTimeout(function () {
-                jQuery('#loading').hide();
-            }, 500)
-        })
+
     })*/
     jQuery(".on-btn").click(function () {
         sendCmd("on")
