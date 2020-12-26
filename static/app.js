@@ -69,13 +69,16 @@ jQuery(document).ready(function () {
     <div style="margin-top: 10px;" data-bind="if: currentDevice">\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
-        <div class="device-title"><b data-bind="text: name"></b></div> \
+    <div class="panel panel-default">\n' +
+        '  <div class="panel-heading">\n' +
+        '    <h3 class="panel-title" ><b data-bind="text: name"></b></h3>\n' +
+        '  </div>' +
+        '  <div class="panel-body">' + '\
         <span data-bind="foreach: commands" class="commands"> \
-            <button  data-bind="attr: {data:value},text:label, click: $root.sendIR"> </button> \
-        </span> \
-        <div style="clear:both"></div>\
-    </li> \
-</ul></div>'
+        <button  data-bind="attr: {data:value},text:label, click: $root.sendIR"> </button> \
+        </span></div> \
+        </div></li> \
+        </ul></div>';
     jQuery('#content').append(content);
     jQuery('#loading').hide();
 
