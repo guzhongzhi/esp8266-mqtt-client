@@ -23,11 +23,19 @@ function WebSocketTest(model) {
             data = JSON.parse(data);
             switch (data.operation) {
                 case "users":
-                    break;
                     console.log(data.data);
-                    model.users.splice(0, 1000);
                     Object.values(data.data).map((user) => {
-                        model.users.push(user);
+                        let hasUser = false;
+                        model.users.map((u2)=>{
+                            if(u2.mac == user.mac) {
+                                hasUser = true;
+                                u2.relay = user.relay;
+                                u2.heartbeatAt = user.heartbeatAt;
+                            }
+                        });
+                        if(!hasUser) {
+                            model.users.push(user);
+                        }
                     })
 
                     break;
