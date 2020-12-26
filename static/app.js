@@ -132,8 +132,8 @@ jQuery(document).ready(function () {
             }
         },
         select(v) {
-            console.log(this,v,model);
-            model.currentDevice = this.mac;
+            console.log("model.currentDevice",model.currentDevice);
+            model.currentDevice(this.mac);
         },
         save(v) {
             console.log(v);
