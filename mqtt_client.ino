@@ -50,7 +50,7 @@ const bool JSONEnabled = true; //是否使用JSON通信
 
 //继电器及状态LED
 const uint16_t statePIN = 14;  //ESP8266 GPIO pin to use. Recommended: 14,D5 . 开机状态
-const uint16_t relayPIN = 5; //ESP8266 GPIO pin to use. Recommended:5, D1  继电器
+uint16_t relayPIN = 5; //ESP8266 GPIO pin to use. Recommended:5, D1  继电器
 String relayPINState = "off";
 
 //红外发射
@@ -58,7 +58,7 @@ const uint16_t kIrLed = 4; // ESP8266 GPIO pin to use. Recommended: 4 (D2). 红�
 IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
 
 //MQTT
-String APP_ID = "camera360";
+String APP_ID = "guz";
 String clientId = "";
 unsigned long lastMsg = 0;
 String MQTT_SERVER = "118.31.246.195";
@@ -209,6 +209,12 @@ void jsonMessageReceived(char* data) {
   Serial.print("cmd:");
   Serial.print(cmd.c_str());
   Serial.println("");
+  if(cmd == "setRelayPIN") {
+    relayPIN = doc["data"].as<uint16_t>();
+    pinMode(relayPIN, OUTPUT);
+    //重新设置了RelayPIN 后将其设置为低电平
+    cmd = "off";
+  }
   if( cmd == "irs" || cmd == "irSend") {
     const char* data = doc["data"].as<char*>();
     Serial.println(data);
