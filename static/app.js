@@ -70,11 +70,9 @@ jQuery(document).ready(function () {
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
         <div class="device-title"><b data-bind="text: name"></b></div> \
-        <ul data-bind="foreach: commands" class="commands"> \
-            <li> \
-            <button class="commands-item" data-bind="attr: {data:value},text:label, click: $parent.sendIR"> </button> \
-            </li> \
-        </ul> \
+        <span data-bind="foreach: commands" class="commands"> \
+            <button  data-bind="attr: {data:value},text:label, click: $parent.$parent.sendIR"> </button> \
+        </span> \
         <div style="clear:both"></div>\
     </li> \
 </ul></div>'
