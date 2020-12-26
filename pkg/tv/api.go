@@ -135,6 +135,7 @@ func (s *Api) DeviceSave() error {
 	d.GetPlainObject().RelayTriggeredByLowLevel = devicePO.RelayTriggeredByLowLevel
 	isRelayPinChanged := d.GetPlainObject().HasCustomRelayPin != devicePO.HasCustomRelayPin
 
+	fmt.Println("devicePO.HasCustomRelayPin",devicePO.HasCustomRelayPin)
 	d.GetPlainObject().CustomRelayPin = devicePO.CustomRelayPin
 	d.GetPlainObject().HasCustomRelayPin = devicePO.HasCustomRelayPin
 	d.Save()
