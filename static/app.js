@@ -29,9 +29,7 @@ function WebSocketTest(model) {
                             console.log(u2.mac,user.mac,user.relay);
                             if(u2.mac == user.mac) {
                                 hasUser = true;
-                                console.log(u2,u2.relay);
-                                u2.relay = user.relay;
-                                u2.heartbeatAt = user.heartbeatAt;
+                                model.replace(u2,user);
                             }
                         });
                         if(!hasUser) {
