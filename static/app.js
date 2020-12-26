@@ -66,7 +66,7 @@ jQuery(document).ready(function () {
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.select}">选择</a></span>\
         </li>\
     </ul>\
-    <div style="margin-top: 10px;" data-bind="if: currentDevice != \'\'">\
+    <div style="margin-top: 10px;" data-bind="if: hasDevice">\
     <div style="padding:10px 0px;"><a href="javascript:void(0)" class="on-btn">电源开</a> <a href="javascript:void(0)" class="off-btn">电源关</a></div>\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
@@ -106,7 +106,7 @@ jQuery(document).ready(function () {
                 success: function (data, status, xhr) {
                     resolve(data)
                 },
-                Error: function (xhr, error, exception) {
+                error: function (xhr, error, exception) {
                 }
             });
         }))
@@ -117,6 +117,9 @@ jQuery(document).ready(function () {
         appId: APP_ID,
         users: ko.observableArray([]),
         currentDevice: "",
+        hasDevice:  ko.computed(function() {
+            return this.currentDevice != "";
+        }, this),
         operation: function (data) {
             let mac = data.mac;
             let relay = data.relay;
@@ -142,8 +145,7 @@ jQuery(document).ready(function () {
         },
         timeformat: function (v) {
             let now = new Date(v * 1000);
-            let
-                y = now.getFullYear(),
+            let y = now.getFullYear(),
                 m = now.getMonth() + 1,
                 d = now.getDate();
             return y + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d) + " " + now.toTimeString().substr(0, 8);
