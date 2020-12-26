@@ -139,8 +139,8 @@ jQuery(document).ready(function () {
         },
         sendIR() {
             let url = "/app/" + APP_ID + "/send-ir?code=" + this.value;
-            if (model.currentDevice != "") {
-                url = "/app/" + APP_ID + "/device-send-ir?mac=" + model.currentDevice + "&code=" + this.value;
+            if (model.currentDevice() != "") {
+                url = "/app/" + APP_ID + "/device-send-ir?mac=" + model.currentDevice() + "&code=" + this.value;
             }
             console.log(url)
             jQuery('#loading').show();
