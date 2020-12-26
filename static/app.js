@@ -66,6 +66,8 @@ jQuery(document).ready(function () {
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.select}">选择</a></span>\
         </li>\
     </ul>\
+    <div data-bind="text:hasDevice"></div>\
+    <div data-bind="text:currentDevice"></div>\
     <div style="margin-top: 10px;" data-bind="if: hasDevice">\
     <div style="padding:10px 0px;"><a href="javascript:void(0)" class="on-btn">电源开</a> <a href="javascript:void(0)" class="off-btn">电源关</a></div>\
     <ul data-bind="foreach: devices" class="devices"> \
