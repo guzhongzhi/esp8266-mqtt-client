@@ -67,7 +67,7 @@ jQuery(document).ready(function () {
     </ul>\
     <div data-bind="text:hasDevice"></div>\
     <div data-bind="text:currentDevice"></div>\
-    <div style="margin-top: 10px;" data-bind="if: hasDevice">\
+    <div style="margin-top: 10px;" data-bind="if: currentDevice">\
     <div style="padding:10px 0px;"><a href="javascript:void(0)" class="on-btn">电源开</a> <a href="javascript:void(0)" class="off-btn">电源关</a></div>\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
