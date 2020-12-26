@@ -72,7 +72,7 @@ jQuery(document).ready(function () {
         <div class="device-title"><b data-bind="text: name"></b></div> \
         <ul data-bind="foreach: commands" class="commands"> \
             <li> \
-            <a href="javascript:void(0)" class="commands-item" data-bind="attr: {data:value},text:label, event:{click: $parent.sendIR}"> </a> \
+            <a class="commands-item" data-bind="attr: {data:value},text:label, event:{click: $parent.sendIR}"> </a> \
             </li> \
         </ul> \
         <div style="clear:both"></div>\
@@ -169,6 +169,7 @@ jQuery(document).ready(function () {
     getUsers();
     //setInterval(getUsers, 10000);
     WebSocketTest(model);
+    /*
     jQuery(".commands-item").on("click",function () {
         let url = "/app/" + APP_ID + "/send-ir?code=" + jQuery(this).attr("data");
         if (model.currentDevice != "") {
@@ -181,7 +182,7 @@ jQuery(document).ready(function () {
                 jQuery('#loading').hide();
             }, 500)
         })
-    })
+    })*/
     jQuery(".on-btn").click(function () {
         sendCmd("on")
     })
