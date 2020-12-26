@@ -63,7 +63,7 @@ jQuery(document).ready(function () {
         <span data-bind="text:$parent.timeformat(heartbeatAt)"></span>\
         <span><a href="javascript:void(0)" data-bind="text:$parent.operationText(relay), event: { click: $parent.operation}"></a></span>\
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.save}">保存</a></span>\
-        <span><a href="javascript:void(0)" data-bind="event: { click: $parent.select">选择</a></span>\
+        <span><a href="javascript:void(0)" data-bind="event: { click: $parent.select}">选择</a></span>\
         </li>\
     </ul>\
     <div style="margin-top: 10px;">\
