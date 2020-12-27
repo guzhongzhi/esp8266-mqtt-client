@@ -28,7 +28,8 @@
 #include <vector>
 #include <iostream>
 #include <sstream> 
-#include<string>
+
+#include <string>
 #include "ESP8266HTTPClient.h"
 //红外发射头文件
 #include <assert.h>
@@ -146,6 +147,20 @@ void debugWIFI() {
     Serial.println( WiFi.gatewayIP());
 }
 
+template<class T>
+int length(T& arr)
+{
+    return sizeof(arr) / sizeof(arr[0]);
+}
+
+
+int hex2Int(string v)  {
+  int temp;
+  std::stringstream ss;
+  ss << std::hex <<v;
+  ss >> temp;
+  return temp;
+}
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -209,6 +224,28 @@ void jsonMessageReceived(char* data) {
   Serial.print("cmd:");
   Serial.print(cmd.c_str());
   Serial.println("");
+
+  const int rel2OFF[] = {0xA1, 0xF1, 0x0E, 0x88};
+  
+  if(cmd == "serialSendHexStringArray") {
+    int len = doc["data"].size();
+    Serial.println("serialSendHexStringArray");
+    delay(1200);
+    for(int i=0;i<len;i++) { 
+          const char* v = doc["data"][i].as<char*>();
+          int v2 = hex2Int(v);
+          Serial.write(rel2OFF[i]);
+    }
+    delay(1200);
+    Serial.println("");
+  }
+  if(cmd == "serialSendIntArray") {
+      int len = doc["data"].size();
+      for(int i=0;i<len;i++) {
+        double v = data[i];
+          Serial.write((int)v);
+      }
+  }
   if(cmd == "setRelayPIN") {
     uint16_t newRelayPIN = doc["data"].as<uint16_t>();
     if (newRelayPIN != relayPIN) {
@@ -323,7 +360,6 @@ void irReceived(String data) {
         commonInfo += ("&data=" + data);
       }  
     }
-    //String topic = "/" + APP_ID + "/ir-received";
     String topic = "/" + APP_ID + "/heart-beat";
     
     client.publish(topic.c_str(), commonInfo.c_str());
@@ -372,7 +408,7 @@ String deviceInfo() {
 void setup(void)
 {
   clientId = APP_ID + "-" + String(random(0xffff), HEX);
-  Serial.begin(115200);
+  Serial.begin(9600);
   Serial.println("");
   pinMode(relayPIN, OUTPUT);
   pinMode(statePIN, OUTPUT);
@@ -390,6 +426,46 @@ void setup(void)
   }
 }
 
+string int2Hex(int i) {
+  std::string temp;
+  std::stringstream ss;
+  ss << std::hex << i;
+  ss >> temp;
+  return temp;
+}
+
+void readSeral() {
+  if(!Serial.available())   {
+    return;
+  }
+    Serial.print("I received: ");
+    // read the incoming byte:
+    int incomingByte;
+    String data = "";
+    while (Serial.available()) {
+       incomingByte = Serial.read();
+       data += String(int2Hex(incomingByte).c_str())+",";
+       Serial.print(incomingByte,HEX);
+       Serial.print(",");
+       if (!Serial.available()) {
+        delayMicroseconds(1200);
+       }
+    }
+
+    String commonInfo = "";
+    if(JSONEnabled) {
+        commonInfo = jsonDeviceInfo(data,0,"serialReceived");
+    } else {
+      commonInfo = deviceInfo();
+      if(data.length() > 0) {
+        commonInfo += ("&data=" + data);
+      }  
+    }
+    String topic = "/" + APP_ID + "/heart-beat";
+    client.publish(topic.c_str(), commonInfo.c_str());
+    Serial.println("");
+}
+
 void loop(void)
 {
   if (!client.connected()) {
@@ -404,6 +480,8 @@ void loop(void)
   if(isIrEnabled == 1) {
     checkIrInput();
   }
+  
+  readSeral();
 }
 
 string replaceCommaToSpace(string s) {
