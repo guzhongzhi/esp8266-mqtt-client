@@ -153,14 +153,15 @@ int length(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-
+//hex string convert to int
 int hex2Int(string v)  {
   int temp;
-  std::stringstream ss;
-  ss << std::hex <<v;
-  ss >> temp;
+  std::stringstream ss2;
+  ss2 << std::hex <<v;
+  ss2 >> temp;
   return temp;
 }
+
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -224,20 +225,23 @@ void jsonMessageReceived(char* data) {
   Serial.print("cmd:");
   Serial.print(cmd.c_str());
   Serial.println("");
-
-  const int rel2OFF[] = {0xA1, 0xF1, 0x0E, 0x88};
   
   if(cmd == "serialSendHexStringArray") {
     int len = doc["data"].size();
     Serial.println("serialSendHexStringArray");
-    delay(1200);
+    delay(500);
+    int hexIntData[len];
     for(int i=0;i<len;i++) { 
           const char* v = doc["data"][i].as<char*>();
           int v2 = hex2Int(v);
-          Serial.write(rel2OFF[i]);
+          hexIntData[i] = v2;
+    }
+    //convert data to int first to make sure the data written in time
+    for (int i=0;i<len;i++){
+        Serial.write(hexIntData[i]);
     }
     delay(1200);
-    Serial.println("");
+    Serial.println("");    
   }
   if(cmd == "serialSendIntArray") {
       int len = doc["data"].size();
@@ -444,7 +448,10 @@ void readSeral() {
     String data = "";
     while (Serial.available()) {
        incomingByte = Serial.read();
-       data += String(int2Hex(incomingByte).c_str())+",";
+       if(data != "") {
+          data += ",";
+       }
+       data += String(int2Hex(incomingByte).c_str());
        Serial.print(incomingByte,HEX);
        Serial.print(",");
        if (!Serial.available()) {
@@ -515,11 +522,7 @@ void sendCode(string message, string type) {
 }
 
 
-
-
-
 //红外接收
-
 void setupIR() {
   assert(irutils::lowLevelSanityCheck() == 0);
   Serial.printf("\n" D_STR_IRRECVDUMP_STARTUP "\n", kRecvPin);
