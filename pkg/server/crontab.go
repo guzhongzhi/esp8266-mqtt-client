@@ -135,6 +135,7 @@ func RunCronTab() {
 				continue
 			}
 			cronIns.Remove(entityId)
+			delete(cronJobs, k)
 		}
 		time.Sleep(30 * time.Second)
 	}
