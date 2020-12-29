@@ -7,6 +7,8 @@ require (
 	github.com/eclipse/paho.mqtt.golang v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
+	github.com/pinguo/pgo2 v0.1.129
+	github.com/robfig/cron/v3 v3.0.0
 	github.com/urfave/cli/v2 v2.3.0
 	go.mongodb.org/mongo-driver v1.4.2
 )

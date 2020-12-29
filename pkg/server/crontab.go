@@ -5,14 +5,18 @@ import (
 	"camera360.com/tv/pkg/tv"
 	"code.aliyun.com/MIG-server/micro-base/config"
 	"code.aliyun.com/MIG-server/micro-base/logger"
-	"code.aliyun.com/MIG-server/micro-base/runtime"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/pinguo/pgo2/util"
+	"github.com/robfig/cron/v3"
+	"log"
 	"strings"
 	"time"
 )
+
+var cronIns *cron.Cron
+var cronJobs = make(map[string]cron.EntryID)
 
 type CrontabConfig struct {
 	OnTime    int64  `json:"ontime"`    //定时开机时间, 时间戳只计算时间部分
@@ -23,127 +27,115 @@ type CrontabConfig struct {
 	OffCodes  string `json:"offcodes"`  //关机所执行的红外命令, 多个逗号分隔
 }
 
-func RunCronTab() {
-	for {
-		runCrontab()
-		time.Sleep(33 * time.Second)
-	}
+type Crontab struct {
+	Second  string `json:"second"`
+	Minute  string `json:"minute"`
+	Hour    string `json:"hour"`
+	Day     string `json:"day"`
+	Month   string `json:"month"`
+	Week    string `json:"week"`
+	Command string `json:"command"`
+	Devices string `json:"devices"`
 }
 
-func runCrontab() error {
-	cfg := config.Config().GetString("params.timedtask", "")
-	fmt.Println("cfg", cfg)
-	if cfg == "" {
-		return errors.New("invalid config")
-	}
-	config := &CrontabConfig{}
-	err := json.Unmarshal([]byte(cfg), config)
-	if err != nil {
-		logger.Default().Error("定时任务配置解析失败")
-		return errors.New("invalid config")
-	}
-
-	if config.OnTime > 0 {
-		logger.Default().Info("自动开")
-		runOnDevice(config.OnTime, config.OnDevice, config.OnCodes, "turnOn")
-	}
-	if config.OffTime > 0 {
-		logger.Default().Info("自动关")
-		runOnDevice(config.OffTime, config.OffDevice, config.OffCodes, "turnOff")
-	}
-	return nil
+func (s *Crontab) Time() string {
+	return fmt.Sprintf("%v %v %v %v %v %v", s.Second, s.Minute, s.Hour, s.Day, s.Month, s.Week)
 }
 
-func runOnDevice(timestamp int64, device string, irCodes string, operation string) {
-	irCodes = strings.TrimSpace(irCodes)
-	now := time.Now()
-	t := time.Unix(timestamp/1000, 0)
-	t.In(time.UTC)
-	if runtime.IsDebug() {
-		logger.Default().Info("now.Hour(),now.Minute(),now.Second()", now.Hour(), now.Minute(), now.Second())
-		logger.Default().Info("t.Hour(),t.Minute(),t.Second()", t.Month(), "-", t.Day(), " ", t.Hour(), t.Minute(), t.Second())
-	}
-	if now.Hour() != t.Hour() || now.Minute() != t.Minute() {
-		return
-	}
-	//如果运行了，拖到下一分钟再结束
-	defer time.Sleep(time.Second * 60)
+func (s *Crontab) GetKey() string {
+	v := fmt.Sprintf("%v,%v,%v,%v,%v,%v,%v,%v", s.Second, s.Minute, s.Hour, s.Day, s.Month, s.Week, s.Command, s.Devices)
+	return util.Md5String(v)
+}
 
-	second := t.Second() - now.Second()
-	for second > 0 {
-		if runtime.IsDebug() {
-			logger.Default().Info("second", second)
-		}
-		time.Sleep(time.Second)
-		second -= 1
-	}
-
-	temp := strings.Split(irCodes, ",")
-	codes := make(map[string]string)
-	for _, code := range temp {
-		c := strings.TrimSpace(code)
-		if c == "" {
+func (s *Crontab) sendMessage(device *tv.Device) {
+	commands := strings.Split(s.Command, ",")
+	app := tv.NewApp("", tv.NewAppNameOption(device.GetPlainObject().AppName))
+	var cmd *tv.Command
+	modeIds := device.GetPlainObject().ModeId
+	mode, _ := remotecontrol.NewModel(context.Background())
+	for _, command := range commands {
+		logger.Default().Debug("execute command:", command)
+		command = strings.TrimSpace(command)
+		switch command {
+		case "none", "":
+			time.Sleep(time.Second * 5)
 			continue
+		case "on":
+			if device.GetPlainObject().RelayTriggeredByLowLevel {
+				cmd = tv.NewOffCommand()
+			} else {
+				cmd = tv.NewOnCommand()
+			}
+			app.SendMessageToUser(device.GetPlainObject().Mac, cmd)
+		case "off":
+			if device.GetPlainObject().RelayTriggeredByLowLevel {
+				cmd = tv.NewOnCommand()
+			} else {
+				cmd = tv.NewOffCommand()
+			}
+			app.SendMessageToUser(device.GetPlainObject().Mac, cmd)
+		default:
+			for _, modeId := range modeIds {
+				mode.Load(modeId)
+				btn := mode.GetButtonByCode(command)
+				if btn == nil || btn.IrCode == "" {
+					continue
+				}
+				logger.Default().Info("send ir command:", btn.Name, btn.Code, btn.IrCode)
+				app.SendMessageToUser(device.GetPlainObject().Mac, tv.NewIrSendCommand(btn.IrCode))
+				time.Sleep(time.Second * 2)
+			}
 		}
-		codes[c] = c
 	}
-	logger.Default().Info("ircode:", codes)
+}
 
-	macs := strings.Split(device, ",")
+func (s *Crontab) Run() {
+	macs := strings.Split(s.Devices, ",")
 	for _, mac := range macs {
-		logger.Default().Info("mac", mac)
+		logger.Default().Info("execute cronjob for mac:", mac)
 		d, _ := tv.NewDevice(context.Background())
 		d.LoadByMac(mac)
 		if ! d.HasId() {
 			logger.Default().Error("invalid device mac: ", mac)
 			continue
 		}
-		app := tv.NewApp("", tv.NewAppNameOption(d.GetPlainObject().AppName))
-		modeIds := d.GetPlainObject().ModeId
-		mode, _ := remotecontrol.NewModel(context.Background())
+		s.sendMessage(d)
+	}
 
-		var cmd *tv.Command
-		if operation == "turnOn" {
-			if d.GetPlainObject().RelayTriggeredByLowLevel {
-				cmd = tv.NewOffCommand()
-			} else {
-				cmd = tv.NewOnCommand()
+}
+
+func RunCronTab() {
+	cronIns = cron.New(cron.WithParser(cron.NewParser(
+		cron.SecondOptional | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
+	)))
+	go cronIns.Run()
+	for {
+		configJobs := make([]*Crontab, 0)
+		newKeys := make(map[string]bool)
+		cfg := config.Config().GetString("params.crontab", "[]")
+		fmt.Println("cfg", cfg)
+		json.Unmarshal([]byte(cfg), &configJobs)
+		for _, configJob := range configJobs {
+			//已经存在的直接跳到下一个
+			if _, ok := cronJobs[configJob.GetKey()]; ok {
+				newKeys[configJob.GetKey()] = true
+				continue
 			}
-		} else {
-			if d.GetPlainObject().RelayTriggeredByLowLevel {
-				cmd = tv.NewOnCommand()
-			} else {
-				cmd = tv.NewOffCommand()
+			entityId, err := cronIns.AddJob(configJob.Time(), configJob)
+			if err != nil {
+				log.Println("add cronjob failure", err.Error())
+				continue
 			}
+			cronJobs[configJob.GetKey()] = entityId
+			newKeys[configJob.GetKey()] = true
 		}
-		app.SendMessageToUser(mac, cmd)
-		//开电后延迟5秒再发送红外信号
-		if irCodes == "" {
-			continue
-		}
-
-		//如果有继电器,关电后不用再按遥控板
-		//@TODO
-		//if cmd.IsTurnOff() && d.GetPlainObject().Relay == "on" {
-		//continue
-		//}
-
-		for _, modeId := range modeIds {
-			mode.Load(modeId)
-			for c, _ := range codes {
-				btn := mode.GetButtonByCode(c)
-				if btn == nil {
-					continue
-				}
-
-				time.Sleep(time.Second * 3)
-				if btn.IrCode == "" {
-					continue
-				}
-				logger.Default().Info("send ir command:", btn.Name, btn.Code, btn.IrCode)
-				app.SendMessageToUser(mac, tv.NewIrSendCommand(btn.IrCode))
+		//判断已经运行的cronjob是否在新配置里
+		for k, entityId := range cronJobs {
+			if _, ok := newKeys[k]; ok {
+				continue
 			}
+			cronIns.Remove(entityId)
 		}
-		logger.Default().Info("execute crontab", cmd.ToString())
+		time.Sleep(30 * time.Second)
 	}
 }
