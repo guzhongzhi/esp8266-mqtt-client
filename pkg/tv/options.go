@@ -16,11 +16,18 @@ func NewMQTTClientOption(client mqtt.Client) AppOption {
 	}
 }
 
+func NewDeviceRelayStatusOnBootOption(status string) AppOption {
+	return func(opts *AppOptions) {
+		opts.DeviceRelayStatusOnBoot  = status
+	}
+}
+
 type AppOptions struct {
 	client mqtt.Client
 	Id     string
 	Name   string
 	Qos    byte
+	DeviceRelayStatusOnBoot string
 }
 
 func NewAppOptions(opts ...AppOption) *AppOptions {

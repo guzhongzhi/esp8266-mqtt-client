@@ -24,6 +24,8 @@ type DevicePO struct {
 	ConnectedAt              int64              `json:"connectedAt" bson:"connectedAt"`
 	HeartbeatAt              int64              `json:"heartbeatAt" bson:"heartbeatAt"`
 	ExecutedAt               int64              `json:"executedAt" bson:"executedAt"` //最后执行的指令
+	IsNewBoot				 bool 				`json:"isNewBoot" bson:"isNewBoot"` //是否重新开机
+	OnBootCommand			 string 			`json:"onBootCommand" bson:"onBootCommand"` //开机执行命令
 }
 
 func (s *DevicePO) ValidateMessages() map[string]string {
