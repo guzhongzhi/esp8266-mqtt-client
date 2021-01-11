@@ -48,7 +48,7 @@ WiFiClient espClient;
 int DEBUG = 0;
 
 const bool JSONEnabled = true; //是否使用JSON通信
-
+bool isNewBoot = true;
 //继电器及状态LED
 const uint16_t statePIN = 14;  //ESP8266 GPIO pin to use. Recommended: 14,D5 . 开机状态
 uint16_t relayPIN = 5; //ESP8266 GPIO pin to use. Recommended:5, D1  继电器
@@ -386,10 +386,12 @@ String jsonDeviceInfo(String data, int executedAt,String cmd) {
    doc["appName"] = APP_ID;
    doc["data"] = data;
    doc["cmd"] = cmd;
+   doc["isNewBoot"] = isNewBoot;
    doc["executedAt"] = executedAt;
    String output = "";
    serializeJson( doc,  output);
    Serial.println(output);
+   isNewBoot = false;
    return output;
 }
 
