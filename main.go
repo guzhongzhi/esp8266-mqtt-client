@@ -7,6 +7,7 @@ import (
 	"code.aliyun.com/MIG-server/micro-base/microclient"
 	"code.aliyun.com/MIG-server/micro-base/runtime"
 	"code.aliyun.com/MIG-server/micro-base/utils"
+	"fmt"
 	"github.com/urfave/cli/v2" // imports as package "cli"
 	"os"
 	"path/filepath"
@@ -85,11 +86,11 @@ func main() {
 		loaderOptions := config.NewOptions(config.ConfigReloadDurationOption(time.Second*60),
 			config.NewCallBackOption(func(loader *config.Loader) {
 				loader.GetRemoteConfigData()
-				/*for key, value := range loader.GetRemoteConfigData() {
+				for key, value := range loader.GetRemoteConfigData() {
 					if runtime.IsDebug() {
-						//fmt.Println(key, value)
+						fmt.Println(key, value)
 					}
-				}*/
+				}
 			}))
 		_, err :=
 			config.InitLoader(env, configPath,

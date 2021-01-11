@@ -68,6 +68,6 @@ func ServeHttp(listen string) {
 	}
 	err := srv.ListenAndServe()
 	if err != nil {
-		log.Fatal("liste http server failed:", err.Error())
+		log.Fatal("listen http server failed:", err.Error())
 	}
 }

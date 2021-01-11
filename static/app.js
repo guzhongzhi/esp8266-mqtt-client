@@ -62,7 +62,7 @@ jQuery(document).ready(function () {
         <span data-bind="text:$parent.timeformat(heartbeatAt)"></span>\
         <span><a href="javascript:void(0)" data-bind="text:$parent.operationText(relay), event: { click: $parent.operation}"></a></span>\
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.save}">保存</a></span>\
-        <span><a href="javascript:void(0)" data-bind="event: { click: $parent.select}">选择</a></span>\
+        <span><a href="javascript:void(0)" data-bind="event: { click: $parent.setCurrentDevice}">选择</a></span>\
         </li>\
     </ul>\
     <div data-bind="text:currentDevice"></div>\
@@ -81,6 +81,7 @@ jQuery(document).ready(function () {
         </ul></div>';
     jQuery('#content').append(content);
     jQuery('#loading').hide();
+    let GlobalModes = {};
 
     let sendCmd = function (cmd, mac = null) {
         let url = "/app/" + APP_ID + "/send-message?cmd=" + cmd;
@@ -95,6 +96,7 @@ jQuery(document).ready(function () {
             }, 500)
         })
     }
+
     let postJSON = function (url, data) {
         return new Promise((resolve => {
             jQuery.ajax({
@@ -112,8 +114,22 @@ jQuery(document).ready(function () {
         }))
     }
 
+    postJSON("/app/"+APP_ID+"/mode/list",{}).then(res=>{
+        res.data.items.map(item=>{
+            GlobalModes[item.id] = item;
+            GlobalModes[item.id].commands = [];
+            postJSON("/app/"+APP_ID+"/mode/button-list?modeId="+item.id,{}).then(res=>{
+                res.data.items.map(btn=>{
+                    GlobalModes[item.id].commands.push({
+                        label:btn.name,
+                        value:btn.irCode,
+                    })
+                })
+            })
+        })
+    })
     let model = {
-        devices: devices,
+        devices: ko.observableArray(devices),
         appId: APP_ID,
         users: ko.observableArray([]),
         currentDevice: ko.observable(""),
@@ -126,9 +142,19 @@ jQuery(document).ready(function () {
                 sendCmd("off", mac);
             }
         },
-        select(v) {
-            console.log("model.currentDevice",model.currentDevice);
-            model.currentDevice(this.mac);
+        setCurrentDevice(v) {
+            console.log(this);
+            model.currentDevice(this.mac,this.modeId);
+            model.devices.splice(0,devices.length);
+            this.modeId.map(modelId=>{
+                if(!GlobalModes[modelId]) {
+                    return;
+                }
+                model.devices.push({
+                    name:GlobalModes[modelId].name,
+                    commands:GlobalModes[modelId].commands,
+                });
+            })
         },
         save(v) {
             console.log(v);

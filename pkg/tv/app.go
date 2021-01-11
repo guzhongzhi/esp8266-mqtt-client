@@ -220,12 +220,19 @@ func (s *app) sendUsersToWS() error {
 }
 
 func (s *app) init() {
+	var err error
+	var users map[string]*DevicePO
 	client := s.options.client
 	log.Println("subscribe to public ir received:", s.GetIRReceivedTopic())
 	log.Println("app boardcast topic:", s.GetPublicTopic())
 	fmt.Println("s.GetIRReceivedTopic()", s.GetIRReceivedTopic())
 	client.Subscribe(s.GetIRReceivedTopic(), s.options.Qos, s.OnIRReceived)
-	s.Users = loadUsers(s.options.Name)
+	users,err = loadUsers(s.options.Name)
+	if err != nil {
+		log.Println("err",err)
+	} else {
+		s.Users = users
+	}
 }
 
 func (s *app) AddUser(user *DevicePO) App {
