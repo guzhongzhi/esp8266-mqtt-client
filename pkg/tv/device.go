@@ -61,17 +61,20 @@ func (s *Device) GetPlainObject() *DevicePO {
 	return s.Data.(*DevicePO)
 }
 
-func loadUsers(appName string) map[string]*DevicePO {
+func loadUsers(appName string) (map[string]*DevicePO,error) {
 	device, _ := NewDevice(context.Background())
 	collection := device.GetCollection()
 	collection.Where(mongo.M{
 		"appName": appName,
 	})
 	data := make(map[string]*DevicePO)
-	pager,_ := collection.GetPager(1,1000)
+	pager,err := collection.GetPager(1,1000)
+	if err != nil {
+		return nil,err
+	}
 	for _,item := range pager.Items.([]*DevicePO) {
 		data[item.Mac] = item
 	}
-	return data
+	return data,nil
 }
 
