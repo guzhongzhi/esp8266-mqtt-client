@@ -191,9 +191,9 @@ jQuery(document).ready(function () {
     ko.applyBindings(model, document.getElementById("content"));
 
     let getUsers = function () {
-        jQuery.getJSON("/app/" + APP_ID + "/users", function (res) {
+        jQuery.getJSON("/app/"+APP_ID+"/device-list", function (res) {
             model.users.splice(0, 1000);
-            res = Object.values(res);
+            res = res.data.items;
             if(res && Array.isArray(res)) {
                 res.map((user) => {
                     model.users.push(user);
