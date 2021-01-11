@@ -71,7 +71,7 @@ jQuery(document).ready(function () {
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.setCurrentDevice}">选择</a></span>\
         </li>\
     </ul>\
-    <div data-bind="text:currentDevice"></div>\
+    <div class="currentDevice" data-bind="text:currentDevice"></div>\
     <div style="margin-top: 10px;" data-bind="if: currentDevice">\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
@@ -150,7 +150,7 @@ jQuery(document).ready(function () {
         },
         setCurrentDevice(v) {
             console.log(this);
-            model.currentDevice(this.mac,this.modeId);
+            model.currentDevice("当前设备: "+this.name + "("+this.mac+")",this.modeId);
             model.devices.splice(0,devices.length);
             this.modeId.map(modelId=>{
                 if(!GlobalModes[modelId]) {
