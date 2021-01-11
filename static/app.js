@@ -7,7 +7,13 @@ function WebSocketTest(model) {
     }
 
     // 打开一个 web socket
-    var ws = new WebSocket("ws://" + location.host + "/ws?app=" + APP_ID);
+    let wsURL = ""
+    if(location.protocol == "https:") {
+        wsURL = "wss://" + location.host + "/ws?app=" + APP_ID;
+    } else {
+        wsURL = "ws://" + location.host + "/ws?app=" + APP_ID;
+    }
+    var ws = new WebSocket(wsURL);
 
     ws.onopen = function () {
         ws.send(JSON.stringify({
