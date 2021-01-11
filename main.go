@@ -3,10 +3,12 @@ package main
 import (
 	"camera360.com/tv/pkg/server"
 	"camera360.com/tv/pkg/tv"
+	"github.com/eclipse/paho.mqtt.golang"
 	"code.aliyun.com/MIG-server/micro-base/config"
 	"code.aliyun.com/MIG-server/micro-base/microclient"
 	"code.aliyun.com/MIG-server/micro-base/runtime"
 	"code.aliyun.com/MIG-server/micro-base/utils"
+	"fmt"
 	"github.com/urfave/cli/v2" // imports as package "cli"
 	"os"
 	"path/filepath"
@@ -23,12 +25,17 @@ func main() {
 			Usage: "start http server and subscribe to mqtt server",
 			Action: func(ctx *cli.Context) error {
 				mq := ctx.String("mq")
-				tv.SetMQServer(mq)
+				relayBootStatus := ctx.String("relayBootStatus")
 				appName := ctx.String("appName")
+				tv.SetMQServer(mq)
 				listen := ctx.String("listen")
 				var wg sync.WaitGroup
 				wg.Add(2)
-				tv.ServeMQTT(appName)
+				tv.ServeMQTT(appName, func(mqClient mqtt.Client) error {
+					app := tv.NewApp(appName, tv.NewMQTTClientOption(mqClient), tv.NewAppNameOption(appName),tv.NewDeviceRelayStatusOnBootOption(relayBootStatus))
+					fmt.Println("app initialized: ",app.Options().Name)
+					return nil
+				})
 				go server.RunCronTab()
 				go tv.NewHub().Run()
 				go func() {
@@ -42,6 +49,11 @@ func main() {
 					Name:  "appName",
 					Usage: "appName",
 					Value: "camera360",
+				},
+				&cli.StringFlag{
+					Name:  "relayBootStatus",
+					Usage: "device relay status after boot: on or off",
+					Value: "off",
 				},
 			},
 		},
@@ -85,11 +97,11 @@ func main() {
 		loaderOptions := config.NewOptions(config.ConfigReloadDurationOption(time.Second*60),
 			config.NewCallBackOption(func(loader *config.Loader) {
 				loader.GetRemoteConfigData()
-				/*for key, value := range loader.GetRemoteConfigData() {
+				for key, value := range loader.GetRemoteConfigData() {
 					if runtime.IsDebug() {
-						//fmt.Println(key, value)
+						fmt.Println(key, value)
 					}
-				}*/
+				}
 			}))
 		_, err :=
 			config.InitLoader(env, configPath,

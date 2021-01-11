@@ -18,7 +18,7 @@ func SetMQServer(v string) {
 	mqServer = v
 }
 
-func RegistryApp(mqttClient mqtt.Client, message mqtt.Message) {
+func heartBeatHandle(mqttClient mqtt.Client, message mqtt.Message) {
 	clientId := ""
 	request := &HeartBeatRequest{}
 	body := strings.TrimSpace(string(message.Payload()))
@@ -43,7 +43,7 @@ func newServerId() string {
 	return "server-" + tools.RandStringBytes(15)
 }
 
-func ServeMQTT(appName string) bool {
+func ServeMQTT(appName string, onConnectedCallback func(mqClient mqtt.Client) error) bool {
 	statChan := make(chan bool, 1)
 	clientId := newServerId()
 	opts := mqtt.NewClientOptions()
@@ -59,8 +59,9 @@ func ServeMQTT(appName string) bool {
 	opts.Username = temp.User.Username()
 	opts.Password, _ = temp.User.Password()
 	opts.OnConnect = func(client mqtt.Client) {
-		log.Println("heart-beat")
-		t := client.Subscribe("/"+appName+"/heart-beat", 2, RegistryApp)
+		log.Println("on mqtt connected")
+		onConnectedCallback(client)
+		t := client.Subscribe("/"+appName+"/heart-beat", 2, heartBeatHandle)
 		if t.Wait() && t.Error() == nil {
 			statChan <- true
 		}

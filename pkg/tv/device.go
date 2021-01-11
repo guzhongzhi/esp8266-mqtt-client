@@ -24,6 +24,8 @@ type DevicePO struct {
 	ConnectedAt              int64              `json:"connectedAt" bson:"connectedAt"`
 	HeartbeatAt              int64              `json:"heartbeatAt" bson:"heartbeatAt"`
 	ExecutedAt               int64              `json:"executedAt" bson:"executedAt"` //最后执行的指令
+	IsNewBoot				 bool 				`json:"isNewBoot" bson:"isNewBoot"` //是否重新开机
+	OnBootCommand			 string 			`json:"onBootCommand" bson:"onBootCommand"` //开机执行命令
 }
 
 func (s *DevicePO) ValidateMessages() map[string]string {
@@ -61,17 +63,20 @@ func (s *Device) GetPlainObject() *DevicePO {
 	return s.Data.(*DevicePO)
 }
 
-func loadUsers(appName string) map[string]*DevicePO {
+func loadUsers(appName string) (map[string]*DevicePO,error) {
 	device, _ := NewDevice(context.Background())
 	collection := device.GetCollection()
 	collection.Where(mongo.M{
 		"appName": appName,
 	})
 	data := make(map[string]*DevicePO)
-	pager,_ := collection.GetPager(1,1000)
+	pager,err := collection.GetPager(1,1000)
+	if err != nil {
+		return nil,err
+	}
 	for _,item := range pager.Items.([]*DevicePO) {
 		data[item.Mac] = item
 	}
-	return data
+	return data,nil
 }
 

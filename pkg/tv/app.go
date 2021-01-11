@@ -40,17 +40,17 @@ func NewApp(clientId string, opts ...AppOption) (*app) {
 	log.Println("options.Name ", options.Name)
 	if options.Name == "" {
 		appName := strings.Split(clientId, "-")[0]
-		if v, ok := apps[appName]; ok {
-			log.Println("app existing", appName)
-			return v
-		}
 		log.Println("new app:", appName)
 		options.Name = appName
 	}
-
+	if v, ok := apps[options.Name]; ok {
+		log.Println("app existing", options.Name)
+		return v
+	}
 	appLocker.Lock()
 	defer appLocker.Unlock()
 	if v, ok := apps[options.Name]; ok {
+		log.Println("app existing logic 2", options.Name)
 		return v
 	}
 
@@ -67,6 +67,10 @@ type app struct {
 	Users   map[string]*DevicePO
 	locker  sync.Mutex
 	options *AppOptions
+}
+
+func (s *app) Options() *AppOptions {
+	return s.options
 }
 
 //发送消息到整个app
@@ -152,6 +156,7 @@ func (s *app) OnHeartBeat(client mqtt.Client, request *HeartBeatRequest) {
 		user.HeartbeatAt = now
 		user.IP = request.IP
 		user.WIFI = request.WIFI
+		user.IsNewBoot = request.IsNewBoot
 		user.RelayPin = request.RelayPIN
 		if request.ExecutedAt > 0 {
 			user.ExecutedAt = request.ExecutedAt
@@ -172,6 +177,7 @@ func (s *app) OnHeartBeat(client mqtt.Client, request *HeartBeatRequest) {
 			ExecutedAt:  request.ExecutedAt,
 			ConnectedAt: now,
 			HeartbeatAt: now,
+			IsNewBoot: request.IsNewBoot,
 		}
 		s.saveUser(user)
 		s.AddUser(user)
@@ -183,6 +189,39 @@ func (s *app) saveUser(user *DevicePO) error {
 	device, _ := NewDevice(context.Background())
 	device.LoadByMac(user.Mac)
 
+	//设备初始化函数
+	onBootFunc := func(device *DevicePO) error {
+		time.Sleep(time.Second)
+		//开机时初始化继电器状态
+		if s.options.DeviceRelayStatusOnBoot == "on" {
+			//开机时打开继电器
+			if device.RelayTriggeredByLowLevel && device.Relay == "on" {
+				s.SendMessageToUser(device.Mac,NewOffCommand())
+			} else if !device.RelayTriggeredByLowLevel && device.Relay == "off" {
+				s.SendMessageToUser(device.Mac,NewOnCommand())
+			}
+		} else {
+			//开机时关闭继电器
+			if device.RelayTriggeredByLowLevel && device.Relay == "off" {
+				s.SendMessageToUser(device.Mac,NewOnCommand())
+			} else if !device.RelayTriggeredByLowLevel && device.Relay == "on" {
+				s.SendMessageToUser(device.Mac,NewOffCommand())
+			}
+		}
+
+		//开机其它自定义命令
+		if device.OnBootCommand == "" {
+			return nil
+		}
+		tmp := strings.Split(strings.TrimSpace(device.OnBootCommand),",")
+		for _,cmd := range tmp {
+			s.SendMessageToUser(device.Mac,NewCmd(cmd,""))
+			time.Sleep(time.Second * 3)
+		}
+
+		return nil
+	}
+
 	if device.HasId() {
 		device.GetPlainObject().WIFI = user.WIFI
 		device.GetPlainObject().Relay = user.Relay
@@ -192,8 +231,13 @@ func (s *app) saveUser(user *DevicePO) error {
 		device.GetPlainObject().RelayPin = user.RelayPin
 		user.Id = device.GetPlainObject().Id
 
+		//开机的时候初始化继电器引脚，
 		if device.GetPlainObject().HasCustomRelayPin && device.GetPlainObject().CustomRelayPin != user.RelayPin{
 			s.SendMessageToUser(device.GetPlainObject().Mac,NewCmd("setRelayPIN",device.GetPlainObject().CustomRelayPin))
+		}
+		if user.IsNewBoot {
+			//开机的时候重新初始化状态
+			onBootFunc(device.GetPlainObject())
 		}
 	} else {
 		device.SetData(user)
@@ -220,12 +264,19 @@ func (s *app) sendUsersToWS() error {
 }
 
 func (s *app) init() {
+	var err error
+	var users map[string]*DevicePO
 	client := s.options.client
 	log.Println("subscribe to public ir received:", s.GetIRReceivedTopic())
 	log.Println("app boardcast topic:", s.GetPublicTopic())
 	fmt.Println("s.GetIRReceivedTopic()", s.GetIRReceivedTopic())
 	client.Subscribe(s.GetIRReceivedTopic(), s.options.Qos, s.OnIRReceived)
-	s.Users = loadUsers(s.options.Name)
+	users,err = loadUsers(s.options.Name)
+	if err != nil {
+		log.Println("err",err)
+	} else {
+		s.Users = users
+	}
 }
 
 func (s *app) AddUser(user *DevicePO) App {

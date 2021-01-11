@@ -41,6 +41,7 @@ type HeartBeatRequest struct {
 	AppName     string `json:"appName"`
 	Data        string `json:"data"`
 	ExecutedAt  int64  `json:"executedAt"`
+	IsNewBoot 	bool   `json:"isNewBoot"`
 }
 
 type Command struct {
