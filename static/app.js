@@ -71,7 +71,7 @@ jQuery(document).ready(function () {
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.setCurrentDevice}">选择</a></span>\
         </li>\
     </ul>\
-    <div class="currentDevice" data-bind="text:currentDevice"></div>\
+    <div class="currentDevice" data-bind="text:currentDeviceName + \"-\" + currentDevice"></div>\
     <div style="margin-top: 10px;" data-bind="if: currentDevice">\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
@@ -139,6 +139,7 @@ jQuery(document).ready(function () {
         appId: APP_ID,
         users: ko.observableArray([]),
         currentDevice: ko.observable(""),
+        currentDeviceName:ko.observable(""),
         operation: function (data) {
             let mac = data.mac;
             let relay = data.relay;
@@ -150,7 +151,8 @@ jQuery(document).ready(function () {
         },
         setCurrentDevice(v) {
             console.log(this);
-            model.currentDevice("当前设备: "+this.name + "("+this.mac+")",this.modeId);
+            model.currentDevice(this.mac);
+            model.currentDeviceName(this.name);
             model.devices.splice(0,devices.length);
             this.modeId.map(modelId=>{
                 if(!GlobalModes[modelId]) {
