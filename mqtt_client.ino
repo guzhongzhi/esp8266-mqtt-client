@@ -43,6 +43,9 @@
 
 using namespace std;
 
+void(* resetFunc) (void) = 0;
+
+
 WiFiClient espClient;
 //debug 时直接连2503
 int DEBUG = 0;
@@ -242,6 +245,9 @@ void jsonMessageReceived(char* data) {
     }
     delay(1200);
     Serial.println("");    
+  }
+  if (cmd == "reset" ) {
+    resetFunc();
   }
   if(cmd == "serialSendIntArray") {
       int len = doc["data"].size();
