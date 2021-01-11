@@ -171,24 +171,27 @@ jQuery(document).ready(function () {
         },
         operationText(data) {
             if(data.relayTriggeredByLowLevel) {
-                if(data.relay == "on") {
-                    return "打开";
-                } else {
+                if(data.relay == "off") {
                     return "关闭";
+                } else {
+                    return "打开";
                 }
             } else {
                 return data.relay == "off" ? "打开" : "关闭";
             }
         },
         relayStatus(data) {
+            let low = "(高电平)";
+
             if(data.relayTriggeredByLowLevel) {
-                if(data.relay == "on") {
-                    return "off";
+                low = "(低电平)";
+                if(data.relay == "off") {
+                    return "on" + low ;
                 } else {
-                    return "on";
+                    return "off" + low;
                 }
             } else {
-                return data.relay;
+                return data.relay + low;
             }
         },
         sendIR() {
