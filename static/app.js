@@ -7,7 +7,13 @@ function WebSocketTest(model) {
     }
 
     // 打开一个 web socket
-    var ws = new WebSocket("ws://" + location.host + "/ws?app=" + APP_ID);
+    let wsURL = ""
+    if(location.protocol == "https:") {
+        wsURL = "wss://" + location.host + "/ws?app=" + APP_ID;
+    } else {
+        wsURL = "ws://" + location.host + "/ws?app=" + APP_ID;
+    }
+    var ws = new WebSocket(wsURL);
 
     ws.onopen = function () {
         ws.send(JSON.stringify({
@@ -56,16 +62,16 @@ jQuery(document).ready(function () {
     <div>当前客户端列表:</div> \
     <ul class="users" data-bind="foreach:users">\
     <li style="padding:10px 0px;"><span><input data-bind="textInput: name" /></span> <span data-bind="text:wifi"></span> \
-        <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:relay"></span> \
+        <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:$parent.relayStatus($data)"></span> \
         <input data-bind="textInput: relayPin" />\
         自定义RelayPin: <input type="checkbox" data-bind="checked: hasCustomRelayPin" /> <input data-bind="textInput: customRelayPin" />\
         <span data-bind="text:$parent.timeformat(heartbeatAt)"></span>\
-        <span><a href="javascript:void(0)" data-bind="text:$parent.operationText(relay), event: { click: $parent.operation}"></a></span>\
+        <span><a href="javascript:void(0)" data-bind="text:$parent.operationText($data), event: { click: $parent.operation}"></a></span>\
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.save}">保存</a></span>\
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.setCurrentDevice}">选择</a></span>\
         </li>\
     </ul>\
-    <div data-bind="text:currentDevice"></div>\
+    <div class="currentDevice" data-bind="text:currentDevice"></div>\
     <div style="margin-top: 10px;" data-bind="if: currentDevice">\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
@@ -144,7 +150,7 @@ jQuery(document).ready(function () {
         },
         setCurrentDevice(v) {
             console.log(this);
-            model.currentDevice(this.mac,this.modeId);
+            model.currentDevice("当前设备: "+this.name + "("+this.mac+")",this.modeId);
             model.devices.splice(0,devices.length);
             this.modeId.map(modelId=>{
                 if(!GlobalModes[modelId]) {
@@ -163,8 +169,30 @@ jQuery(document).ready(function () {
                 console.log(res);
             })
         },
-        operationText(v) {
-            return v == "off" ? "打开" : "关闭";
+        operationText(data) {
+            if(data.relayTriggeredByLowLevel) {
+                if(data.relay == "off") {
+                    return "关闭";
+                } else {
+                    return "打开";
+                }
+            } else {
+                return data.relay == "off" ? "打开" : "关闭";
+            }
+        },
+        relayStatus(data) {
+            let low = "(高电平)";
+
+            if(data.relayTriggeredByLowLevel) {
+                low = "(低电平)";
+                if(data.relay == "off") {
+                    return "on" + low ;
+                } else {
+                    return "off" + low;
+                }
+            } else {
+                return data.relay + low;
+            }
         },
         sendIR() {
             let url = "/app/" + APP_ID + "/send-ir?code=" + this.value;
@@ -191,9 +219,10 @@ jQuery(document).ready(function () {
     ko.applyBindings(model, document.getElementById("content"));
 
     let getUsers = function () {
-        jQuery.getJSON("/app/" + APP_ID + "/users", function (res) {
+        jQuery.getJSON("/app/"+APP_ID+"/device-list", function (res) {
             model.users.splice(0, 1000);
-            res = Object.values(res);
+            console.log(res);
+            res = res.items;
             if(res && Array.isArray(res)) {
                 res.map((user) => {
                     model.users.push(user);
