@@ -62,11 +62,11 @@ jQuery(document).ready(function () {
     <div>当前客户端列表:</div> \
     <ul class="users" data-bind="foreach:users">\
     <li style="padding:10px 0px;"><span><input data-bind="textInput: name" /></span> <span data-bind="text:wifi"></span> \
-        <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:relay"></span> \
+        <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:$parent.relayStatus($data)"></span> \
         <input data-bind="textInput: relayPin" />\
         自定义RelayPin: <input type="checkbox" data-bind="checked: hasCustomRelayPin" /> <input data-bind="textInput: customRelayPin" />\
         <span data-bind="text:$parent.timeformat(heartbeatAt)"></span>\
-        <span><a href="javascript:void(0)" data-bind="text:$parent.operationText(relay), event: { click: $parent.operation}"></a></span>\
+        <span><a href="javascript:void(0)" data-bind="text:$parent.operationText($data), event: { click: $parent.operation}"></a></span>\
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.save}">保存</a></span>\
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.setCurrentDevice}">选择</a></span>\
         </li>\
@@ -169,8 +169,27 @@ jQuery(document).ready(function () {
                 console.log(res);
             })
         },
-        operationText(v) {
-            return v == "off" ? "打开" : "关闭";
+        operationText(data) {
+            if(data.relayTriggeredByLowLevel) {
+                if(data.relay == "on") {
+                    return "打开";
+                } else {
+                    return "关闭";
+                }
+            } else {
+                return data.relay == "off" ? "打开" : "关闭";
+            }
+        },
+        relayStatus(data) {
+            if(data.relayTriggeredByLowLevel) {
+                if(data.relay == "on") {
+                    return "off";
+                } else {
+                    return "on";
+                }
+            } else {
+                return data.relay;
+            }
         },
         sendIR() {
             let url = "/app/" + APP_ID + "/send-ir?code=" + this.value;
