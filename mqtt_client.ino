@@ -59,7 +59,7 @@ const uint16_t kIrLed = 4; // ESP8266 GPIO pin to use. Recommended: 4 (D2). çº¢å
 IRsend irsend(kIrLed);     // Set the GPIO to be used to sending the message.
 
 //MQTT
-String APP_ID = "guz";
+String APP_ID = "camera360";
 String clientId = "";
 unsigned long lastMsg = 0;
 String MQTT_SERVER = "118.31.246.195";
@@ -439,7 +439,7 @@ string int2Hex(int i) {
 }
 
 void readSeral() {
-  if(!Serial.available())   {
+  if(!Serial.available() || true)   {
     return;
   }
     Serial.print("I received: ");
@@ -555,15 +555,12 @@ void checkIrInput() {
     yield();  // Feed the WDT as the text output can take a while to print.
 #if LEGACY_TIMING_INFO
     // Output legacy RAW timing info of the result.
-    Serial.println(resultToTimingInfo(&results));
+    //Serial.println(resultToTimingInfo(&results));
     yield();  // Feed the WDT (again)
 #endif  // LEGACY_TIMING_INFO
     // Output the results as source code
     String a = resultToSourceCode(&results);
     String b = formatIRData2(a);
-    Serial.println("===========aaaaaaaaaaaaaaaaaaaa============");
-    Serial.println(a);
-    Serial.println("============bbbbbbbbbbbbbbbbbbbbb===========");
     irReceived(b);
     Serial.println();    // Blank line between entries
     yield();             // Feed the WDT (again)
@@ -589,8 +586,7 @@ String formatIRData2(String m) {
           continue;
         }
         n += String(m[i]);      
-    }   
-    Serial.println(n);
+    }
     return n;
 }
 
