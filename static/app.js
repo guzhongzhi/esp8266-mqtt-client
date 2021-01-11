@@ -199,7 +199,8 @@ jQuery(document).ready(function () {
     let getUsers = function () {
         jQuery.getJSON("/app/"+APP_ID+"/device-list", function (res) {
             model.users.splice(0, 1000);
-            res = res.data.items;
+            console.log(res);
+            res = res.items;
             if(res && Array.isArray(res)) {
                 res.map((user) => {
                     model.users.push(user);
