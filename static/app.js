@@ -71,7 +71,7 @@ jQuery(document).ready(function () {
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.setCurrentDevice}">选择</a></span>\
         </li>\
     </ul>\
-    <div class="currentDevice" data-bind="text:currentDeviceName + \"-\" + currentDevice"></div>\
+    <div class="currentDevice">当前设备: <span data-bind="text:currentDeviceName"></span><span data-bind="text:currentDevice"></span></div>\
     <div style="margin-top: 10px;" data-bind="if: currentDevice">\
     <ul data-bind="foreach: devices" class="devices"> \
     <li class="device"> \
