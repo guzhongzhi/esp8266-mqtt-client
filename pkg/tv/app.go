@@ -247,7 +247,7 @@ func (s *app) saveUser(user *DevicePO) error {
 }
 
 func (s *app) sendUsersToWS() error {
-	device := NewDevice(context.Background())
+	device, _ := NewDevice(context.Background())
 	for _, user := range s.Users {
 		device.Load(user.Id)
 		if device.HasId() {
