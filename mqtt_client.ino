@@ -30,6 +30,7 @@
 #include <sstream> 
 
 #include <string>
+#include <ESP8266httpUpdate.h>
 #include "ESP8266HTTPClient.h"
 //红外发射头文件
 #include <assert.h>
@@ -39,7 +40,7 @@
 #include <IRtext.h>
 #include <IRutils.h>
 #include "ArduinoJson.h"
-
+//#include "upgrade.cpp"
 
 using namespace std;
 
@@ -49,6 +50,8 @@ void(* resetFunc) (void) = 0;
 WiFiClient espClient;
 //debug 时直接连2503
 int DEBUG = 0;
+
+String versionCode = "1.0.0";
 
 const bool JSONEnabled = true; //是否使用JSON通信
 bool isNewBoot = true;
@@ -83,7 +86,8 @@ const uint8_t kTolerancePercentage = kTolerance;  // kTolerance is normally 25%
 #define LEGACY_TIMING_INFO false
 IRrecv irrecv(kRecvPin, kCaptureBufferSize, kTimeout, true);
 decode_results results;  // Somewhere to store the results
-    
+
+//自动连接
 bool autoConfig()
 {
     int tried = 0;
@@ -107,6 +111,8 @@ bool autoConfig()
     Serial.println( WiFi.gatewayIP());
     return(true);
 }
+
+//智能配网
 void smartConfig()
 {
     Serial.println( "\r\nWait for Smartconfig" );
@@ -165,6 +171,7 @@ int hex2Int(string v)  {
   return temp;
 }
 
+//mqtt 回调
 void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
   Serial.print(topic);
@@ -206,11 +213,54 @@ void callback(char* topic, byte* payload, unsigned int length) {
   } else if(cmd == "low" || cmd == "off") {
     setLow();
   }
-  
-  Serial.println("");
-  Serial.println("=============================");
 }
+
 PubSubClient client(MQTT_SERVER.c_str(),1883,callback,espClient);
+
+
+void update_started() {
+  Serial.println("CALLBACK:  HTTP update process started");
+}
+
+void update_finished() {
+  Serial.println("CALLBACK:  HTTP update process finished");
+}
+
+void update_progress(int cur, int total) {
+  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+}
+
+void update_error(int err) {
+  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+}
+
+void upgrade(const char* url) {
+    ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
+    // Add optional callback notifiers
+    ESPhttpUpdate.onStart(update_started);
+    ESPhttpUpdate.onEnd(update_finished);
+    ESPhttpUpdate.onProgress(update_progress);
+    ESPhttpUpdate.onError(update_error);
+    Serial.println("url:");
+    Serial.println(url);
+    WiFiClient client;
+    t_httpUpdate_return ret = ESPhttpUpdate.update(client, url);
+    switch (ret) {
+      case HTTP_UPDATE_FAILED:
+        Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+        break;
+
+      case HTTP_UPDATE_NO_UPDATES:
+        Serial.println("HTTP_UPDATE_NO_UPDATES");
+        break;
+
+      case HTTP_UPDATE_OK:
+        Serial.println("HTTP_UPDATE_OK");
+        break;
+    }
+    delay(1000);
+}
+
 
 void jsonMessageReceived(char* data) {
   StaticJsonDocument<300> doc;
@@ -228,6 +278,22 @@ void jsonMessageReceived(char* data) {
   Serial.print("cmd:");
   Serial.print(cmd.c_str());
   Serial.println("");
+
+  
+  if ( cmd == "upgrade" ) {    
+    string u = "http://192.168.18.159:9900/static/mqtt.bin";
+    const char* url = doc["data"].as<char*>();
+    Serial.println("");
+    Serial.print("change url");
+    Serial.print(url);
+    Serial.print(strlen(url));
+    Serial.println("");
+    if(strlen(url) > 0)  {
+        u="";
+        u.append(url);
+    }
+    upgrade(u.c_str());
+  }
   
   if(cmd == "serialSendHexStringArray") {
     int len = doc["data"].size();
@@ -336,7 +402,6 @@ void setHigh() {
 void setLow() {
   Serial.println("replay low");
   relayPINState = "off";
-  //digitalWrite(relayPIN,LOW);
   analogWrite(relayPIN,0);
   heartBeat();
 }
@@ -394,6 +459,7 @@ String jsonDeviceInfo(String data, int executedAt,String cmd) {
    doc["cmd"] = cmd;
    doc["isNewBoot"] = isNewBoot;
    doc["executedAt"] = executedAt;
+   doc["version"] = versionCode;
    String output = "";
    serializeJson( doc,  output);
    Serial.println(output);
@@ -414,13 +480,15 @@ String deviceInfo() {
   s.concat(WiFi.gatewayIP().toString());
   s.concat("&relay=");
   s.concat(relayPINState.c_str());
+  s.concat("&version=");
+  s.concat(versionCode);
   return s;
 }
 
 void setup(void)
 {
   clientId = APP_ID + "-" + String(random(0xffff), HEX);
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("");
   pinMode(relayPIN, OUTPUT);
   pinMode(statePIN, OUTPUT);
@@ -428,7 +496,7 @@ void setup(void)
   if(DEBUG == 1) {
     debugWIFI();
   } else if (!autoConfig()){
-      Serial.println( "Start AP mode" );
+      Serial.println( "start smart config." );
       smartConfig();
   }
   delay(2000);
@@ -495,7 +563,6 @@ void loop(void)
   if(isIrEnabled == 1) {
     checkIrInput();
   }
-  
   readSeral();
 }
 
