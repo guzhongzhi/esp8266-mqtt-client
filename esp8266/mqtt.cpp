@@ -24,6 +24,7 @@ extern bool isNewBoot;
 extern String versionCode;
 extern String MQTTServer;
 extern String heartBeatTopic;
+extern string upgradeUrl;
 
 void(* resetFunc) (void) = 0;
 
@@ -42,19 +43,15 @@ void jsonMessageReceived(char* data) {
   Serial.println(cmd.c_str());
   
   if ( cmd == "upgrade" ) {    
-    string u = "http://192.168.18.159:9900/static/mqtt.bin";
     const char* url = doc["data"].as<char*>();
-    Serial.println(url);
+    upgradeUrl = "";
     if(strlen(url) > 0)  {
-        u="";
-        u.append(url);
+        upgradeUrl.append(url);
     }
-    upgrade(u.c_str());
   }
   
-  if(cmd == "serialSendHexStringArray") {
+  if(cmd == "ser_send_hex_arr") {
     int len = doc["data"].size();
-    Serial.println("serialSendHexStringArray");
     delay(500);
     int hexIntData[len];
     for(int i=0;i<len;i++) { 
@@ -72,7 +69,7 @@ void jsonMessageReceived(char* data) {
   if (cmd == "reset" ) {
     resetFunc();
   }
-  if(cmd == "serialSendIntArray") {
+  if(cmd == "ser_send_int_arr") {
       int len = doc["data"].size();
       for(int i=0;i<len;i++) {
         double v = data[i];
@@ -133,7 +130,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 void mqttReconnect() {
   // Loop until we're reconnected
   while (!mqttClient->connected()) {
-    Serial.print("Attempting MQTT "+MQTTServer+" connection...");
+    Serial.print("mq reconnection...");
     // Attempt to connect
     mqttClient->setBufferSize(2048);
     if (mqttClient->connect(clientId.c_str(),MQTTUser.c_str(),MQTTPass.c_str())) {
@@ -143,7 +140,6 @@ void mqttReconnect() {
     } else {
       Serial.print("failed, rc=");
       Serial.print(mqttClient->state());
-      Serial.println(" try again in 2 seconds");
       // Wait 5 seconds before retrying
       delay(2000);
     }
@@ -156,4 +152,7 @@ void heartBeat() {
     return ;
   }
   mqttClient->publish(heartBeatTopic.c_str(), jsonDeviceInfo("",0,"heartBeat").c_str());
+  if(upgradeUrl != "") {
+    upgrade(upgradeUrl.c_str());
+  }
 }

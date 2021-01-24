@@ -3,6 +3,8 @@
 #include <iostream>
 #include <sstream>
 
+using namespace std;
+
 PubSubClient *mqttClient;
 WiFiClient wifiClient;
 bool isNewBoot = true;
@@ -17,4 +19,6 @@ String userTopic =  "";
 int RelayPin = 5;
 String RelayStatus = "on";
 int IRSendPin = 4;
-String versionCode = "1.0.0";
+String versionCode = "1.2.5";
+bool isInUpgrading = false;
+string upgradeUrl = "";

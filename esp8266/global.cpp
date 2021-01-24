@@ -34,7 +34,7 @@ extern bool isNewBoot;
 extern String versionCode;
 
 String jsonDeviceInfo(String data, int executedAt, String cmd) {
-   StaticJsonDocument<300> doc;
+   StaticJsonDocument<400> doc;
    doc["mac"] = WiFi.macAddress();
    doc["ip"]   = WiFi.localIP().toString();
    doc["wifi"] = WiFi.SSID();

@@ -1,6 +1,8 @@
 
 #include <ESP8266httpUpdate.h>
 
+extern bool isInUpgrading;
+
 void update_started() {
   Serial.println("CALLBACK:  HTTP update process started");
 }
@@ -18,6 +20,7 @@ void update_error(int err) {
 }
 
 void upgrade(const char* url) {
+    isInUpgrading = true;
     ESPhttpUpdate.setLedPin(LED_BUILTIN, LOW);
     // Add optional callback notifiers
     ESPhttpUpdate.onStart(update_started);
@@ -42,4 +45,5 @@ void upgrade(const char* url) {
         break;
     }
     delay(1000);
+    isInUpgrading = false;
 }
