@@ -12,35 +12,28 @@ extern WiFiClient wifiClient;
 extern PubSubClient* mqttClient;
 int lastMsg = 0;
 extern bool isInUpgrading;
+extern bool isNewBoot;
 
 void setup(){
     clientId = AppId + "-" + String(random(0xffff), HEX);
     Serial.begin(115200);
-    Serial.println(clientId);
-
+    delay(1000);
     pinMode(RelayPin, OUTPUT);
     digitalWrite(RelayPin,LOW);
-    RelayStatus = "off";
-
     if (!autoConfig()){
       smartConfig();
     }
-    //irsend.begin();
     userTopic = "/" + AppId + "/user/" +  WiFi.macAddress();
     mqttClient = new PubSubClient(MQTTServer.c_str(),1883,callback,wifiClient);
 }
 
 void loop() {
-    if(isInUpgrading) {
-        delay(1000 * 2);
-        return;
-    }
   if (!mqttClient->connected()) {
     mqttReconnect();
   }
   mqttClient->loop();
   long now = millis();
-  if ( lastMsg == 0 ||  (now - lastMsg) > 60000) {
+  if ( lastMsg == 0 ||  (now - lastMsg) > 10000) {
     lastMsg = now;
     heartBeat();
   }

@@ -1,7 +1,6 @@
 #include <ESP8266WiFi.h>
 #include "wifi.h"
 
-//智能配网
 void smartConfig()
 {
     WiFi.mode( WIFI_STA );
@@ -16,24 +15,30 @@ void smartConfig()
         Serial.printf( "SSID:%s\r\n", WiFi.SSID().c_str() );
         Serial.printf( "PSW:%s\r\n", WiFi.psk().c_str() );
         WiFi.setAutoConnect( true ); 
-        break;        
+        break;
     }
     Serial.println( WiFi.localIP() );
     Serial.println( WiFi.gatewayIP());
 }
 
-
-//自动连接
 bool autoConfig()
 {
     Serial.println( "Start to connect WIFI." );
     WiFi.begin();
-    while ( WiFi.status() != WL_CONNECTED )
+    short int maxNum = 10;
+    while ( maxNum  > 0)
     {
+        maxNum--;
         Serial.print( "." );
         delay( 1000 );
+        if(WiFi.status() != WL_CONNECTED) {
+          continue;
+        }
     }
-    Serial.println( WiFi.localIP() );
-    Serial.println( WiFi.gatewayIP());
-    return(true);
+    bool i = WiFi.status() == WL_CONNECTED;
+    if(i) {
+      Serial.println( WiFi.localIP() );
+      Serial.println( WiFi.gatewayIP());      
+    }
+    return(i);
 }

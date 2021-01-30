@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void IRSendMessage(int pin,string message) {
+void IRSendMessage(short int pin,string message) {
   IRsend irsend(pin); 
   irsend.begin();
   message = replaceCommaToSpace(message);

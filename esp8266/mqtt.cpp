@@ -6,7 +6,7 @@
 #include "global.h"
 #include "ArduinoJson.h"
 #include "mqtt.h"
-#include <PubSubClient.h> //>=2.8
+#include <PubSubClient.h>
 
 extern WiFiClient wifiClient;
 extern PubSubClient* mqttClient;
@@ -17,8 +17,8 @@ extern String MQTTUser;
 extern String MQTTPass;
 extern String publicTopic;
 extern String RelayStatus;
-extern int RelayPin;
-extern int IRSendPin;
+extern short int RelayPin;
+extern short int IRSendPin;
 extern String AppId;
 extern bool isNewBoot;
 extern String versionCode;
@@ -38,11 +38,11 @@ void jsonMessageReceived(char* data) {
   string cmd = "";
   cmd.append(cmdArray);
 
-  int executedAt = doc["executedAt"].as<int>();
+  int executedAt = doc["execAt"].as<int>();
   Serial.println("cmd:");
   Serial.println(cmd.c_str());
   
-  if ( cmd == "upgrade" ) {    
+  if ( cmd == "upg" ) {    
     const char* url = doc["data"].as<char*>();
     upgradeUrl = "";
     if(strlen(url) > 0)  {
@@ -50,6 +50,11 @@ void jsonMessageReceived(char* data) {
     }
   }
   
+  if (cmd == "reset" ) {
+    resetFunc();
+  }
+  /*
+   * 
   if(cmd == "ser_send_hex_arr") {
     int len = doc["data"].size();
     delay(500);
@@ -59,15 +64,11 @@ void jsonMessageReceived(char* data) {
           int v2 = hex2Int(v);
           hexIntData[i] = v2;
     }
-    //convert data to int first to make sure the data written in time
     for (int i=0;i<len;i++){
         Serial.write(hexIntData[i]);
     }
     delay(1200);
     Serial.println("");
-  }
-  if (cmd == "reset" ) {
-    resetFunc();
   }
   if(cmd == "ser_send_int_arr") {
       int len = doc["data"].size();
@@ -75,8 +76,8 @@ void jsonMessageReceived(char* data) {
         double v = data[i];
           Serial.write((int)v);
       }
-  }
-  if(cmd == "setRelayPIN") {
+  }*/
+  if(cmd == "srp") {
     uint16_t newRelayPIN = doc["data"].as<uint16_t>();
     if (newRelayPIN != RelayPin) {
       RelayPin = newRelayPIN;
@@ -88,7 +89,7 @@ void jsonMessageReceived(char* data) {
     const char* data = doc["data"].as<char*>();
     IRSendMessage(IRSendPin,data);
   }
-  if( cmd == "setPinLow") {
+  if( cmd == "pl") {
     int pin = doc["data"].as<int>();
     pinMode(pin, OUTPUT);
     if (pin == RelayPin) {
@@ -96,7 +97,7 @@ void jsonMessageReceived(char* data) {
     }
     digitalWrite(pin,LOW);
   }
-  if( cmd == "setPinHigh") {
+  if( cmd == "ph") {
     int pin = doc["data"].as<int>();
     pinMode(pin, OUTPUT);
     digitalWrite(pin,HIGH);
@@ -113,7 +114,7 @@ void jsonMessageReceived(char* data) {
     RelayStatus = "off";
   }
   
-  mqttClient->publish(heartBeatTopic.c_str(), jsonDeviceInfo(String(cmd.c_str()),executedAt,"feedBack").c_str());
+  mqttClient->publish(heartBeatTopic.c_str(), jsonDeviceInfo(String(cmd.c_str()),executedAt,"feed").c_str());
 }
 
 //mqtt 回调
@@ -123,15 +124,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
     data[i] = (char) payload[i];
   }
   data[length] = '\0';
-  Serial.println(data);
   jsonMessageReceived(data);
 }
 
 void mqttReconnect() {
-  // Loop until we're reconnected
   while (!mqttClient->connected()) {
-    Serial.print("mq reconnection...");
-    // Attempt to connect
+    Serial.println("mq conn...");
     mqttClient->setBufferSize(2048);
     if (mqttClient->connect(clientId.c_str(),MQTTUser.c_str(),MQTTPass.c_str())) {
       mqttClient->subscribe(userTopic.c_str(),1);
@@ -139,8 +137,7 @@ void mqttReconnect() {
       mqttClient->setCallback(callback);
     } else {
       Serial.print("failed, rc=");
-      Serial.print(mqttClient->state());
-      // Wait 5 seconds before retrying
+      Serial.println(mqttClient->state());
       delay(2000);
     }
   }
@@ -151,8 +148,10 @@ void heartBeat() {
   if(!mqttClient->connected()) {
     return ;
   }
-  mqttClient->publish(heartBeatTopic.c_str(), jsonDeviceInfo("",0,"heartBeat").c_str());
+  mqttClient->publish(heartBeatTopic.c_str(), jsonDeviceInfo("",0,"beat").c_str());
   if(upgradeUrl != "") {
-    upgrade(upgradeUrl.c_str());
+    if(upgrade(upgradeUrl.c_str())) {
+      upgradeUrl = "";
+    }
   }
 }

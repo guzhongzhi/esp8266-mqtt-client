@@ -27,8 +27,8 @@ int hex2Int(string v)  {
 
 extern String clientId;
 extern String RelayStatus;
-extern int RelayPin;
-extern int IRSendPin;
+extern short int RelayPin;
+extern short int IRSendPin;
 extern String AppId;
 extern bool isNewBoot;
 extern String versionCode;
@@ -38,18 +38,18 @@ String jsonDeviceInfo(String data, int executedAt, String cmd) {
    doc["mac"] = WiFi.macAddress();
    doc["ip"]   = WiFi.localIP().toString();
    doc["wifi"] = WiFi.SSID();
-   doc["clientId"] = clientId;
+   doc["cid"] = clientId;
    doc["gw"] = WiFi.gatewayIP().toString();
    doc["relay"] = RelayStatus.c_str();
-   doc["relayPin"] = RelayPin;
-   doc["statePin"] = -1;
+   doc["rPin"] = RelayPin;
+   doc["sPin"] = -1;
    doc["irPin"] = IRSendPin;
-   doc["appName"] = AppId;
+   doc["app"] = AppId;
    doc["data"] = data;
    doc["cmd"] = cmd;
-   doc["isNewBoot"] = isNewBoot;
-   doc["executedAt"] = executedAt;
-   doc["version"] = versionCode;
+   doc["newBoot"] = isNewBoot;
+   doc["execAt"] = executedAt;
+   doc["ver"] = versionCode;
    String output = "";
    serializeJson( doc,  output);
    Serial.println(output);

@@ -1,4 +1,4 @@
 #ifndef UPGRADE
 #define UPGRADE
-void upgrade(const char*);
+bool upgrade(const char*);
 #endif

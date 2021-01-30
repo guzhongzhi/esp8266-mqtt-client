@@ -3,5 +3,5 @@ using namespace std;
 
 #ifndef IRSEND
 #define IRSEND
-void IRSendMessage(int,string);
+void IRSendMessage(short int,string);
 #endif
