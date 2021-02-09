@@ -133,6 +133,7 @@ func (s *App) addUser(req *dto.BeatRequest) error {
 	s.Users[req.Mac].RelayPin = req.RelayPIN
 	s.Users[req.Mac].Relay = req.Relay
 	s.Users[req.Mac].IRPin = req.IrPIN
+	s.Users[req.Mac].IRReceivePin = req.IrReceivePIN
 	s.Users[req.Mac].Version = req.Version
 
 	buf, err := json.Marshal(s.Users[req.Mac])
