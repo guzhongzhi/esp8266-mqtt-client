@@ -57,18 +57,17 @@ function WebSocketTest(model) {
 }
 
 jQuery(document).ready(function () {
-
     var content = '<div>当前应用: <span data-bind="text:appId"></span></div>\
     <div>当前客户端列表:</div> \
     <ul class="users" data-bind="foreach:users">\
-    <li style="padding:10px 0px;"><span><input data-bind="textInput: name" /></span> <span data-bind="text:wifi"></span> \
+    <li style="padding:10px 0px; border: solid 1px #e1e1e1;padding:10px;"><span><input data-bind="textInput: client_id" /></span> <span data-bind="text:wifi"></span> \
         <span data-bind="text:ip"></span> <span data-bind="text:mac"></span> <span data-bind="text:$parent.relayStatus($data)"></span> \
-        <input data-bind="textInput: relayPin" />\
-        自定义RelayPin: <input type="checkbox" data-bind="checked: hasCustomRelayPin" /> <input data-bind="textInput: customRelayPin" />\
-        <span data-bind="text:$parent.timeformat(heartbeatAt)"></span>\
+        <div style="padding: 10px;">Relay Pin: <input data-bind="textInput: relay_pin" />\
+        自定义RelayPin: <input type="checkbox" data-bind="checked: has_custom_relay_pin" /> <input data-bind="textInput: custom_relay_pin" />\
+        <span data-bind="text:$parent.timeformat(refreshed_at)"></span>\
         <span><a href="javascript:void(0)" data-bind="text:$parent.operationText($data), event: { click: $parent.operation}"></a></span>\
         <span><a href="javascript:void(0)" data-bind="event: { click: $parent.save}">保存</a></span>\
-        <span><a href="javascript:void(0)" data-bind="event: { click: $parent.setCurrentDevice}">选择</a></span>\
+        <span><a href="javascript:void(0)" data-bind="event: { click: $parent.setCurrentDevice}">选择</a></span></div>\
         </li>\
     </ul>\
     <div class="currentDevice">当前设备: <span data-bind="text:currentDeviceName"></span><span data-bind="text:currentDevice"></span></div>\
@@ -89,19 +88,6 @@ jQuery(document).ready(function () {
     jQuery('#loading').hide();
     let GlobalModes = {};
 
-    let sendCmd = function (cmd, mac = null) {
-        let url = "/app/" + APP_ID + "/send-message?cmd=" + cmd;
-        if (mac) {
-            url = "/app/" + APP_ID + "/device-send-message?mac=" + mac + "&cmd=" + cmd;
-        }
-        console.log(url)
-        jQuery('#loading').show();
-        jQuery.get(url, function (res) {
-            setTimeout(() => {
-                jQuery('#loading').hide();
-            }, 500)
-        })
-    }
 
     let postJSON = function (url, data) {
         return new Promise((resolve => {
@@ -120,11 +106,24 @@ jQuery(document).ready(function () {
         }))
     }
 
-    postJSON("/app/"+APP_ID+"/mode/list",{}).then(res=>{
+    let sendCmd = function (cmd, mac = null) {
+        let url = "/app/" + appName + "/send-message?cmd=" + cmd;
+        if (mac) {
+            url = "/app/" + appName + "/user/send-message?mac=" + mac + "&cmd=" + cmd;
+        }
+        postJSON(url,{
+            mac:mac,
+            cmd:cmd,
+        })
+
+    }
+
+
+    postJSON("/app/"+appName+"/mode/list",{}).then(res=>{
         res.data.items.map(item=>{
             GlobalModes[item.id] = item;
             GlobalModes[item.id].commands = [];
-            postJSON("/app/"+APP_ID+"/mode/button-list?modeId="+item.id,{}).then(res=>{
+            postJSON("/app/"+appName+"/mode/button-list?modeId="+item.id,{}).then(res=>{
                 res.data.items.map(btn=>{
                     GlobalModes[item.id].commands.push({
                         label:btn.name,
@@ -136,7 +135,7 @@ jQuery(document).ready(function () {
     })
     let model = {
         devices: ko.observableArray(devices),
-        appId: APP_ID,
+        appId: appName,
         users: ko.observableArray([]),
         currentDevice: ko.observable(""),
         currentDeviceName:ko.observable(""),
@@ -166,8 +165,11 @@ jQuery(document).ready(function () {
         },
         save(v) {
             console.log(v);
-            console.log(this);
-            postJSON("/app/guz/device-save",this).then(res=>{
+            let data = {
+                mac:this.mac,
+                name:this.client_id,
+            }
+            postJSON("/app/"+appName+"/user/save",data).then(res=>{
                 console.log(res);
             })
         },
@@ -197,7 +199,7 @@ jQuery(document).ready(function () {
             }
         },
         sendIR() {
-            let url = "/app/" + APP_ID + "/send-ir?code=" + this.value;
+            let url = "/app/" + appName + "/send-ir?code=" + this.value;
             if (model.currentDevice() != "") {
                 url = "/app/" + APP_ID + "/device-send-ir?mac=" + model.currentDevice() + "&code=" + this.value;
             }
@@ -221,10 +223,10 @@ jQuery(document).ready(function () {
     ko.applyBindings(model, document.getElementById("content"));
 
     let getUsers = function () {
-        jQuery.getJSON("/app/"+APP_ID+"/device-list", function (res) {
+        jQuery.getJSON("/app/"+appName+"/users", function (res) {
             model.users.splice(0, 1000);
+            res = Object.values(res);
             console.log(res);
-            res = res.items;
             if(res && Array.isArray(res)) {
                 res.map((user) => {
                     model.users.push(user);

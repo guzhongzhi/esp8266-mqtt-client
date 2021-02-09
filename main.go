@@ -1,19 +1,12 @@
 package main
 
 import (
+	"camera360.com/tv/pkg"
 	"camera360.com/tv/pkg/server"
-	"camera360.com/tv/pkg/tv"
-	"github.com/eclipse/paho.mqtt.golang"
-	"code.aliyun.com/MIG-server/micro-base/config"
-	"code.aliyun.com/MIG-server/micro-base/microclient"
-	"code.aliyun.com/MIG-server/micro-base/runtime"
-	"code.aliyun.com/MIG-server/micro-base/utils"
-	"fmt"
 	"github.com/urfave/cli/v2" // imports as package "cli"
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 )
 
 var app = cli.NewApp()
@@ -27,20 +20,15 @@ func main() {
 				mq := ctx.String("mq")
 				relayBootStatus := ctx.String("relayBootStatus")
 				appName := ctx.String("appName")
-				tv.SetMQServer(mq)
-				listen := ctx.String("listen")
+
+				app := pkg.NewApp(appName,mq,relayBootStatus)
+				app.BaseDir = ctx.String("base")
+				//listen := ctx.String("listen")
 				var wg sync.WaitGroup
-				wg.Add(2)
-				tv.ServeMQTT(appName, func(mqClient mqtt.Client) error {
-					app := tv.NewApp(appName, tv.NewMQTTClientOption(mqClient), tv.NewAppNameOption(appName),tv.NewDeviceRelayStatusOnBootOption(relayBootStatus))
-					fmt.Println("app initialized: ",app.Options().Name)
-					return nil
-				})
-				go server.RunCronTab()
-				go tv.NewHub().Run()
-				go func() {
-					server.ServeHttp(listen)
-				}()
+				wg.Add(1)
+				go server.ServeHttp(ctx.String("listen"))
+				go server.ServeMQTT(app, nil)
+				go server.NewHub().Run()
 				wg.Wait()
 				return nil
 			},
@@ -48,7 +36,7 @@ func main() {
 				&cli.StringFlag{
 					Name:  "appName",
 					Usage: "appName",
-					Value: "camera360",
+					Value: "guz",
 				},
 				&cli.StringFlag{
 					Name:  "relayBootStatus",
@@ -89,29 +77,6 @@ func main() {
 		},
 	}
 	app.Before = func(ctx *cli.Context) error {
-		runtime.SetDebug(ctx.Bool("debug"))
-		env := ctx.String("env")
-		clientId := "com.camera360.srv.tvads"
-		//configUrl := "http://localhost:8100"
-		configPath := utils.GetBinPath("../configs")
-		loaderOptions := config.NewOptions(config.ConfigReloadDurationOption(time.Second*60),
-			config.NewCallBackOption(func(loader *config.Loader) {
-				loader.GetRemoteConfigData()
-				for key, value := range loader.GetRemoteConfigData() {
-					if runtime.IsDebug() {
-						fmt.Println(key, value)
-					}
-				}
-			}))
-		_, err :=
-			config.InitLoader(env, configPath,
-				loaderOptions,
-				//microclient.HttpCallUrlOption(configUrl),
-				microclient.ClientCallTypeOption(microclient.ClientCallTypeHttp),
-				microclient.NewClientIdOption(clientId))
-		if err != nil {
-			panic(err)
-		}
 		return nil
 	}
 	app.Run(os.Args)

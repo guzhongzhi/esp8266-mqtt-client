@@ -15,7 +15,6 @@ string replaceCommaToSpace(string s) {
   return s;
 }
 
-
 //hex string convert to int
 int hex2Int(string v)  {
   int temp;
@@ -25,7 +24,6 @@ int hex2Int(string v)  {
   return temp;
 }
 
-extern String clientId;
 extern String RelayStatus;
 extern short int RelayPin;
 extern short int IRSendPin;
@@ -34,22 +32,21 @@ extern bool isNewBoot;
 extern String versionCode;
 
 String jsonDeviceInfo(String data, int executedAt, String cmd) {
-   StaticJsonDocument<400> doc;
-   doc["mac"] = WiFi.macAddress();
-   doc["ip"]   = WiFi.localIP().toString();
-   doc["wifi"] = WiFi.SSID();
-   doc["cid"] = clientId;
-   doc["gw"] = WiFi.gatewayIP().toString();
-   doc["relay"] = RelayStatus.c_str();
-   doc["rPin"] = RelayPin;
-   doc["sPin"] = -1;
-   doc["irPin"] = IRSendPin;
-   doc["app"] = AppId;
-   doc["data"] = data;
-   doc["cmd"] = cmd;
-   doc["newBoot"] = isNewBoot;
-   doc["execAt"] = executedAt;
-   doc["ver"] = versionCode;
+   StaticJsonDocument<600> doc;
+   doc["m"] = WiFi.macAddress();
+   doc["i"]   = WiFi.localIP().toString();
+   doc["w"] = WiFi.SSID();
+   doc["g"] = WiFi.gatewayIP().toString();
+   doc["r"] = RelayStatus.c_str();
+   doc["rp"] = RelayPin;
+   doc["sp"] = -1;
+   doc["irp"] = IRSendPin;
+   doc["a"] = AppId;
+   doc["d"] = data;
+   doc["c"] = cmd;
+   doc["b"] = isNewBoot;
+   doc["e"] = executedAt;
+   doc["v"] = versionCode;
    String output = "";
    serializeJson( doc,  output);
    Serial.println(output);

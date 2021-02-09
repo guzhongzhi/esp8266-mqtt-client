@@ -1,21 +1,35 @@
 package server
 
 import (
-	"camera360.com/tv/pkg/ads"
-	"camera360.com/tv/pkg/remotecontrol"
-	"camera360.com/tv/pkg/tv"
+	"camera360.com/tv/pkg"
+	app2 "camera360.com/tv/pkg/app"
+	"camera360.com/tv/pkg/dto"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 )
 
+func appByRequest(writer http.ResponseWriter, request *http.Request) *pkg.App {
+	r := mux.Vars(request)
+	if _, ok := r["appName"]; !ok {
+		writer.Write([]byte("invalid appName"))
+		return nil
+	}
+	appName := r["appName"]
+	app := pkg.GetApp(appName)
+	if app == nil {
+		writer.Write([]byte("invalid appName"))
+		return nil
+	}
+	return app
+}
 func ServeHttp(listen string) {
 	log.Println("http listen: ", listen)
 	r := mux.NewRouter()
@@ -27,37 +41,225 @@ func ServeHttp(listen string) {
 	r.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Write([]byte("OK"))
 	})
+	//websocket
+	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		WebSocketHandler(NewHub(), w, r)
+	})
 
 	//应用列表
 	r.HandleFunc("/apps", func(writer http.ResponseWriter, request *http.Request) {
-		j, err := json.Marshal(tv.Apps())
-		fmt.Println("apps", err)
+		apps := pkg.Apps()
+		j, _ := json.Marshal(apps)
 		writer.Write(j)
 	})
 
-	//websocket
-	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		tv.WebSocketHandler(tv.NewHub(), w, r)
-	})
-
-	r.HandleFunc("/api/index", func(writer http.ResponseWriter, request *http.Request) {
-		ads.NewApi().ServeHTTP(writer, request)
-	})
-
-	//应用接口
-	subRouter := r.PathPrefix("/app/{appId}/").Subrouter().MatcherFunc(func(r *http.Request, match *mux.RouteMatch) bool {
-		result, _ := regexp.MatchString("/app/.*?", r.URL.Path)
-		return result
-	})
-	subRouter.HandlerFunc(func(w http.ResponseWriter, r2 *http.Request) {
-		//遥控板管理
-		if strings.Index(r2.URL.Path, "/mode/") != -1 {
-			remotecontrol.NewControl().ServeHTTP(w, r2)
-		} else if strings.Index(r2.URL.Path, "/ads/") != -1 {
-			ads.NewController().ServeHTTP(w, r2)
-		} else {
-			tv.NewApi().ServeHTTP(w, r2)
+	r.HandleFunc("/app/{appName}/users", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
 		}
+		b, _ := json.Marshal(app.Users)
+		writer.Write(b)
+	})
+
+	r.HandleFunc("/app/{appName}/user/send-message", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+		body, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			fmt.Print("err:", err.Error())
+		}
+		fmt.Println("body", string(body))
+		var req struct {
+			Mac  string      `json:"mac"`
+			Cmd  string      `json:"cmd"`
+			Data interface{} `json:"data"`
+		}
+		json.Unmarshal(body, &req)
+		if req.Data == nil {
+			req.Data = ""
+		}
+		c := dto.NewCmd(req.Cmd, req.Data)
+		if req.Mac != "" {
+			app.SendUserCommand(req.Mac, c)
+		} else {
+
+		}
+		writer.Write([]byte("{}"))
+	})
+	r.HandleFunc("/app/{appName}/buttons", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+		b, _ := json.Marshal(app.GetButtons())
+		writer.Write(b)
+	})
+
+	r.HandleFunc("/app/{appName}/button/groups", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+		b, _ := json.Marshal(app.GetButtonGroups())
+		writer.Write(b)
+	})
+
+	r.HandleFunc("/app/{appName}/button/group-save", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+
+		body, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			fmt.Print("err:", err.Error())
+		}
+		b := &app2.ButtonGroup{}
+		json.Unmarshal(body, b)
+		if b.Id == 0 {
+			writer.Write([]byte("Error"))
+		}
+		app.SaveButtonGroup(b)
+		writer.Write([]byte("Group Save OK"))
+	})
+
+	r.HandleFunc("/app/{appName}/button/group-delete", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+
+		body, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			fmt.Print("err:", err.Error())
+		}
+		b := &app2.ButtonGroup{}
+		json.Unmarshal(body, b)
+		if b.Id == 0 {
+			writer.Write([]byte("Error"))
+		}
+		app.DeleteButtonGroup(uint64(b.Id))
+		writer.Write([]byte("OK"))
+	})
+
+	r.HandleFunc("/app/{appName}/button/group-buttons", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+
+		body, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			fmt.Print("err:", err.Error())
+		}
+		b := &app2.ButtonGroup{}
+		json.Unmarshal(body, b)
+		if b.Id == 0 {
+			writer.Write([]byte("Error"))
+		}
+		d := app.GetGroupButtons(uint64(b.Id))
+		js, _ := json.Marshal(d)
+		writer.Write(js)
+	})
+
+	r.HandleFunc("/app/{appName}/button/save", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+
+		body, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			fmt.Print("err:", err.Error())
+		}
+		b := &app2.Button{}
+		json.Unmarshal(body, b)
+		if b.Id == 0 {
+			writer.Write([]byte("Error"))
+		}
+		app.SaveButton(b)
+		writer.Write([]byte("OK"))
+	})
+
+	r.HandleFunc("/app/{appName}/button/delete", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+
+		body, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			fmt.Print("err:", err.Error())
+		}
+		b := &app2.Button{}
+		json.Unmarshal(body, b)
+		if b.Id == 0 {
+			writer.Write([]byte("Error"))
+			return
+		}
+		app.DeleteButton(b.Id)
+		writer.Write([]byte("OK"))
+	})
+
+	r.HandleFunc("/app/{appName}/user/save", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+		b, _ := json.Marshal(app.Users)
+		body, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			fmt.Print("err:", err.Error())
+		}
+		var req struct {
+			Mac      string  `json:"mac"`
+			Groups   []int32 `json:"groups"`
+			ClientId string  `json:"client_id"`
+		}
+		json.Unmarshal(body, &req)
+		if v, ok := app.Users[req.Mac]; ok {
+			v.ClientId = req.ClientId
+			v.Groups = req.Groups
+		}
+		app.SaveUser(req.Mac)
+		writer.Write(b)
+	})
+
+	r.HandleFunc("/app/{appName}/user/delete", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+		b, _ := json.Marshal(app.Users)
+		body, err := ioutil.ReadAll(request.Body)
+		if err != nil {
+			fmt.Print("err:", err.Error())
+		}
+		var req struct {
+			Mac  string `json:"mac"`
+			Name string `json:"name"`
+		}
+		json.Unmarshal(body, &req)
+		app.DeleteUser(req.Mac)
+		writer.Write(b)
+	})
+
+	r.HandleFunc("/app/{appName}/dashboard", func(writer http.ResponseWriter, request *http.Request) {
+		app := appByRequest(writer, request)
+		if app == nil {
+			return
+		}
+		fileName := app.BaseDir + "/static/index.html"
+		body, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			writer.Write([]byte("invalid appName: " + fileName))
+			return
+		}
+		html := strings.Replace(string(body), "__APP_NAME__", app.Name, -1)
+		writer.Write([]byte(html))
 	})
 
 	srv := &http.Server{
