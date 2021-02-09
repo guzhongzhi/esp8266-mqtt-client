@@ -11,6 +11,7 @@ type User struct {
 	RelayPin int `json:"relay_pin"` //继电器引脚
 	StatePin int  `json:"state_pin"`//状态引脚
 	IRPin int  `json:"ir_pin"`//红外引脚
+	IRReceivePin int `json:"ir_receive_pin"` //接收红外引脚
 	AppName  string `json:"app_name"`
 	IsNewBoot bool `json:"is_new_boot"`
 	Version string `json:"version"`

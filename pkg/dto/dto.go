@@ -30,7 +30,8 @@ type BeatRequest struct {
 	Relay      string `json:"r"`
 	RelayPIN   int    `json:"rp"`
 	StatePIN   int    `json:"sp"`
-	IrPIN      int    `json:"irp"`
+	IrPIN      int    `json:"irsp"` //发送引脚
+	IrReceivePIN int `json:"irrp"` //接收引脚
 	App        string `json:"a"`
 	Data       string `json:"d"`
 	ExecutedAt int64  `json:"e"`

@@ -7,8 +7,8 @@ srp: 设置继电器引脚
 upg: 升级
 irr: 红外接收
 
-{"cmd":"upg","data":"http://192.168.18.159:9900/static/mqtt.bin","execAt":123456778}
-{"cmd":"upg","data":"http://192.168.18.159:9900/static/upgrade.bin","execAt":123456778}
+{"cmd":"upg","data":"http://ctl.home.gulusoft.com:3001/bin/mqtt.bin","execAt":123456778}
+{"cmd":"upg","data":"http://ctl.home.gulusoft.com:3001/bin/upgrade.bin","execAt":123456778}
 
 {"cmd":"on","execAt":123456}
 {"cmd":"off","execAt":123456}

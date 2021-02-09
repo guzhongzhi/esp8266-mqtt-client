@@ -34,17 +34,17 @@ bool upgrade(const char* url) {
     bool r = true;
     switch (ret) {
       case HTTP_UPDATE_FAILED:
-        Serial.printf("update Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+        Serial.printf("500 (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
         r = false;
         break;
 
       case HTTP_UPDATE_NO_UPDATES:
-        Serial.println("no update");
+        Serial.println("304");
         r = true;
         break;
 
       case HTTP_UPDATE_OK:
-        Serial.println("update ok");
+        Serial.println("ok");
         r = true;
         break;
     }

@@ -11,7 +11,7 @@ import (
 
 
 func newServerId() string {
-	return "server-" + tools.RandStringBytes(15)
+	return "server-" + tools.RandStringBytes(25)
 }
 
 func ServeMQTT(app *pkg.App, onConnectedCallback func(mqClient mqtt.Client) error) bool {

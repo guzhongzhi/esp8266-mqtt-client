@@ -132,6 +132,7 @@ func (s *App) addUser(req *dto.BeatRequest) error {
 
 	s.Users[req.Mac].RelayPin = req.RelayPIN
 	s.Users[req.Mac].Relay = req.Relay
+	s.Users[req.Mac].IRPin = req.IrPIN
 	s.Users[req.Mac].Version = req.Version
 
 	buf, err := json.Marshal(s.Users[req.Mac])
@@ -335,6 +336,9 @@ func (s *App) DeleteButton(id uint64) error {
 
 func (s *App) irReceived(data string) {
 	temp := strings.Split(data, ";")
+	if len(temp) <2 {
+		return
+	}
 	data = strings.Trim(temp[0], "{")
 	data = strings.Trim(data, "}")
 	data = strings.TrimSpace(data)

@@ -30,17 +30,19 @@ extern short int IRSendPin;
 extern String AppId;
 extern bool isNewBoot;
 extern String versionCode;
+extern short int IRReceivePin;
 
 String jsonDeviceInfo(String data, int executedAt, String cmd) {
    StaticJsonDocument<600> doc;
    doc["m"] = WiFi.macAddress();
    doc["i"]   = WiFi.localIP().toString();
    doc["w"] = WiFi.SSID();
-   doc["g"] = WiFi.gatewayIP().toString();
+   //doc["g"] = WiFi.gatewayIP().toString();
    doc["r"] = RelayStatus.c_str();
    doc["rp"] = RelayPin;
    doc["sp"] = -1;
-   doc["irp"] = IRSendPin;
+   doc["irsp"] = IRSendPin;
+   doc["irrp"] = IRReceivePin;
    doc["a"] = AppId;
    doc["d"] = data;
    doc["c"] = cmd;
@@ -49,7 +51,6 @@ String jsonDeviceInfo(String data, int executedAt, String cmd) {
    doc["v"] = versionCode;
    String output = "";
    serializeJson( doc,  output);
-   Serial.println(output);
    isNewBoot = false;
    return output;
 }

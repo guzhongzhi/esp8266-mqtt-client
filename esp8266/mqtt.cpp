@@ -109,7 +109,6 @@ void mqttReconnect() {
       mqttClient->subscribe(publicTopic.c_str(),1);
       mqttClient->setCallback(callback);
     } else {
-      Serial.print("err: ");
       Serial.println(mqttClient->state());
       delay(2000);
     }
