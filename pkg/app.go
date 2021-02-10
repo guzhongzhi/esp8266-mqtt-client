@@ -195,6 +195,12 @@ func (s *App) MQTTOnMessageReceived(mqttClient mqtt.Client, message mqtt.Message
 	switch request.Command {
 	case "beat":
 		s.addUser(request)
+		if request.IsNewBoot {
+			u := s.Users[request.Mac]
+			if u.HasCustomRelayPin {
+				s.SendUserCommand(u.Mac,dto.NewCmd("srp", u.CustomRelayPin))
+			}
+		}
 	case "irr":
 		//红外接收
 		data := request.Data

@@ -226,12 +226,23 @@ func ServeHttp(listen string) {
 
 
 		if v, ok := app.Users[req.Mac]; ok {
+			oldHasCustomPin := v.HasCustomRelayPin
 			v.ClientId = req.ClientId
 			v.Groups = req.Groups
 			v.CustomRelayPin = req.CustomRelayPin
 			v.HasCustomRelayPin = req.HasCustomRelayPin
 			v.RelayPin = req.RelayPin
+
+			if oldHasCustomPin != req.HasCustomRelayPin || (v.HasCustomRelayPin  && v.CustomRelayPin != req.CustomRelayPin) {
+				if req.HasCustomRelayPin {
+					app.SendUserCommand(v.Mac,dto.NewCmd("srp", req.CustomRelayPin))
+				} else {
+					app.SendUserCommand(v.Mac,dto.NewCmd("srp", req.RelayPin))
+				}
+			}
 		}
+
+
 		app.SaveUser(req.Mac)
 		writer.Write(b)
 	})
