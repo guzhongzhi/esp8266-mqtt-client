@@ -3,6 +3,7 @@ package server
 import (
 	"camera360.com/tv/pkg"
 	"camera360.com/tv/pkg/tools"
+	"fmt"
 	"github.com/eclipse/paho.mqtt.golang"
 	"log"
 	"net/url"
@@ -11,7 +12,7 @@ import (
 
 
 func newServerId() string {
-	return "server-" + tools.RandStringBytes(25)
+	return "server-" + tools.RandStringBytes(25) + fmt.Sprintf("-%v",time.Now().Unix())
 }
 
 func ServeMQTT(app *pkg.App, onConnectedCallback func(mqClient mqtt.Client) error) bool {

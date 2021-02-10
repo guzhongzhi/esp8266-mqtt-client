@@ -218,11 +218,19 @@ func ServeHttp(listen string) {
 			Mac      string  `json:"mac"`
 			Groups   []int32 `json:"groups"`
 			ClientId string  `json:"client_id"`
+			CustomRelayPin int `json:"custom_relay_pin"`
+			HasCustomRelayPin bool `json:"has_custom_relay_pin"`
+			RelayPin int `json:"relay_pin"`
 		}
 		json.Unmarshal(body, &req)
+
+
 		if v, ok := app.Users[req.Mac]; ok {
 			v.ClientId = req.ClientId
 			v.Groups = req.Groups
+			v.CustomRelayPin = req.CustomRelayPin
+			v.HasCustomRelayPin = req.HasCustomRelayPin
+			v.RelayPin = req.RelayPin
 		}
 		app.SaveUser(req.Mac)
 		writer.Write(b)
